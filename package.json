@@ -1,0 +1,21 @@
+{
+  "name": "cy-study",
+  "version": "0.0.1",
+  "description": "study record summarize",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/cyxuan0926/cy-study.git"
+  },
+  "keywords": [
+    "study"
+  ],
+  "author": "caiyang",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cyxuan0926/cy-study/issues"
+  },
+  "homepage": "https://github.com/cyxuan0926/cy-study#readme"
+}
