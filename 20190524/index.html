@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>20190524</title>
+</head>
+<body>
+  <div class="test">
+    this is for test
+    <h1>hello</h1>
+    <h2>world</h2>
+  </div>
+  <script>
+    var name = 'global name'
+    // console.log占位符 如果第一一个参数是字符串 而且还包含占位符的情况
+    /* let name = 'cy', age= 23, height = 178.4
+    console.log('- %s name', name); // %s 类型为字符串的占位符
+    console.log('%d age', age); //%d||%i 代表整数
+    console.log('%f height', height); //%f 代表浮点数
+    console.log('%o', document.body.firstEl  ementChild); // %o 可展开的DOM
+    console.log('%O', document.body); // %O 列出DOM属性
+    console.log('%cHello,cy', 'color: red;font-size: 18px') // %c css样式格式话字符串
+    console.log('my name is %ccy ', 'font-size:12px;color:red')
+    console.log('http://www.baidu.com') 
+    Es6 中 var function声明的全局变量依旧是顶层对象的属性 let const class声明的全局变量不属于顶层对象的属性
+    */
+let A = {
+  name: 'cy',
+  print(age, sex){
+    console.log(`my name is ${this.name} and my age is ${age} and wo shi ${sex}`);
+  }
+}, B = {
+  name: 'wcx'
+}
+let b = A.print
+let c = b.bind(null, 24)
+c(21, 'boy')
+  </script>
+</body>
+</html>

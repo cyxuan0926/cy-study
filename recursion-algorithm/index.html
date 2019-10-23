@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <script>
+    /** 
+     * 递归：一个问题能不能分解成多个子问题来解决/该问题是否和子问题的解决思路相同/该问题是否有终止条件
+     * 写出递推公式/找到终止条件
+     * 递归的分类：
+     * 1:递归计算型：层层计算和并列计算(通过递归的并列计算来得到结果的)
+     * 2:递归枚举型：回溯算法(深度优先遍历、八皇后问题)
+    */
+    function f(n) {
+      if(n === 1) return 1;
+      return f(n-1) + 1;
+    }
+    function fAge(n) {
+      if(n===1) return 10;
+      return fAge(n-1) + 2;
+    }
+    // console.log(fAge(20))
+    function fl(n) {
+      if(n === 0) return 0;
+      if(n === 1) return 1;
+      return fl(n-1) + fl(n-2);
+    }
+    // console.log(fl(10)) 一只青蛙一次可以跳上1级台阶 也可以跳上2级
+    // 青蛙跳台阶：目标是完成台阶数 过程是怎么去完成 
+    // 1: 1 f(n-1) 2: 2 f(n-2) 注意 递归不需要关注具体的细节 只要找到了递归关系
+    function frog(n) {
+      if (n === 0) return ;
+      if(n === 1) return 1;
+      if(n=== 2) return 2;
+      return frog(n-1) + frog(n-2);
+    }
+    // console.log(frog(7))
+    // 八皇后问题：8x8的网格中 放入八个皇后棋子 任意两个棋子都不能处于同一行、同一列或同一斜线上
+    // 确定一个棋子 才能确定下一个棋子的排列位置的数目 二维数组(0,0) 1,4 0,5 2,3
+    // 一行：(ai,bi) (ai,x) 一列：(ax,by) (x, by) 一斜线: (x, y) (a,b)这个关系怎么确定
+    // n：棋子，x：行数 y: 列数
+    // 这边的思路是：遍历每一行 然后判断是否合适 合适的话 就+1 然后就是这一步的数目
+    // 总的封装函数 数学是去解决问题的逻辑 但是程序上面是最原始的实现 数学是有一定的条件了
+    // 重新理下思路：判断位置是否有效因为是遍历来的 所以只要判断上下 左上角 右上角是否有位置
+    function queen(n, x, y) {
+    }
+    // 判断某一行的某一列是否是符合条件的元素
+    function isOkCulomn(row, culomn) {
+      // row：行 culomn：列 定位了一个位置
+      let leftCulomn = culomn - 1, rightCulom = culomn + 1;
+    }
+    // Array.from(Iterator[,mapFunction[, thisArg]]):mapFunction返回的值将插入到新集合中
+    // 1:将类数组转换成数组 2:数组的浅拷贝(元素类型是基本类型 浅拷贝和深拷贝没区别 拷贝的是值))
+    // const someNumbers = { '0':10, '1': 15, length: 2 };
+    // const map = new Map()
+    // map.set('one', 1)
+    // map.set('two', 2)
+    // console.log(Array.from(someNumbers, value => value * 2))
+    // console.log(Array.from('hey'), Array.from(new Set(['one', 'two'])), Array.from(map))
+    // let numbers = [3,6,9], copyNumbers = Array.from(numbers);
+    // numbers[0] = 12
+    // console.log(numbers, copyNumbers)
+    // 深拷贝是拷贝值 浅拷贝是拷贝指针
+    // function recursiveClone(val) {
+    //   return Array.isArray(val) ?  Array.from(val, recursiveClone) : val;
+    // }
+    // const numbers = [[0,1,2], ['one', 'two', 'three']]
+    // const numbersClone = recursiveClone(numbers)
+    // console.log(numbersClone, numbers[0] === numbersClone[0])
+    // 递归拷贝更简短的数组深拷贝:既然是拷贝 可能会有嵌套的情况 所以需要遍历,且不能改变原来的元素
+    // 使用值填充数组：如果你需要使用相同的值来初始化数组：
+    // const length = 3;
+    // const init = 0;
+    // const result = Array.from({ length }, () => init );
+    // console.log(result)
+    // 使用对象填充数组：当初始化数组的每项都应该是一个新对象时
+    // const length = 3;
+    // const resultA = Array.from({ length }, () => ({}))
+    // const resultB = Array(length).fill({})
+    // console.log(resultA, resultB, resultB[0] === resultB[1], resultA[0] === resultA[1])
+    // 使用'array.map':Array(length):创建了一个有3个空项的数组 但是map方法会跳过空项
+    // 生成数字范围:你可以使用Array.from() 生成值范围
+    // function range(end) {
+    //   return Array.from({ length: end }, (_, index) => index)
+    // }
+    // console.log(range(4))
+    // 数组去重: Array.from(new Set(array))
+    // Array.from方法接受类数组对象以及可迭代对象，它可以接受一个map函数 并且 这个map函数不会跳过值为undefined的
+    // 数值项 
+  </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Access-Control-Allow-Origin" content="*">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <script>
+    window.onload = function() {
+      let data ='', xml = new XMLHttpRequest();
+      xml.onreadystatechange = function () {
+        if (xml.readyState === 4 && xml.status === 200) {
+          console.log(xml.responseText)
+        }
+      }
+      // xml.open('POST', 'https://www.yuwugongkai.com/ywgk/users/login');
+      // data = `password=3m4c3n9J&username=9999_sh&prison=9999`
+      // xml.open('POST', 'http://120.79.251.238:8021/ywgk/mailboxes/page?page=1&rows=10');
+      xml.open('GET', 'https://lbs.netease.im/lbs/webconf.jsp');
+      // xml.setRequestHeader('Content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
+      xml.withCredentials = true;
+      xml.send(data);
+    }
+  </script>  
+</body>
+</html> 

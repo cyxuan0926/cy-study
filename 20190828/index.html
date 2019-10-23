@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <!-- <a href="javascript: downLoad()">ad</a> -->
+  <script>
+    // function downLoad() {
+    //   var xhr = new XMLHttpRequest(), formData = new FormData()
+    //   xhr.open("get", "https://www.yuwugongkai.com/ywgk/feedbacks/download", true)
+    //   xhr.setRequestHeader('Authorization', "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsieXdnay5hcHAiLCJhdXRoIl0sInVzZXJfbmFtZSI6Inl3dF9hZG1pbiIsInNjb3BlIjpbInB1YmxpYyJdLCJvcmdhbml6YXRpb24iOm51bGwsImV4cCI6MTU2NzA3OTAzMSwiYXV0aG9yaXRpZXMiOlsidmlzaXQucHJpc29uLWFyZWEuYWxsLXByaXNvbi5zZWFyY2giLCJwbGF0Zm9ybS5zZXF1ZW5jZS5zZWFyY2giLCJ2aXNpdC5wcmlzb24tYXJlYS5hZGQiLCJwbGF0Zm9ybS50ZW5hbnQtcHJvcG9zYWwuc2VhcmNoIiwidmlzaXQucHJpc29uLmNvbmZpZy51cGRhdGUiLCJwbGF0Zm9ybS5pbS1ub3RpZmljYXRpb24udmlldyIsInBsYXRmb3JtLmltLXVzZXIuc2VhcmNoIiwicGxhdGZvcm0ucm9sZS10ZW1wbGF0ZS52aWV3IiwicGxhdGZvcm0uY291bnRyeS5zZWFyY2giLCJ2aXNpdC50ZXJtaW5hbC5hZGQiLCJwbGF0Zm9ybS5jaXR5LnNlYXJjaCIsInBsYXRmb3JtLm9wZXJhdGlvbi1sb2cuc2VhcmNoIiwicGxhdGZvcm0uc21zLW5vdGlmaWNhdGlvbi5zZWFyY2giLCJ2aXNpdC5mYW1pbHktcmVtaXR0YW5jZS5zZWFyY2giLCJwbGF0Zm9ybS5mZWVkYmFjay52aWV3IiwicGxhdGZvcm0uc2VxdWVuY2UudmlldyIsInBsYXRmb3JtLnRlbmFudC1wcm9wb3NhbC52aWV3IiwidmlzaXQuYWR2ZXJ0aXNlbWVudC51cGRhdGUiLCJ2aXNpdC50cmFuc2FjdGlvbi1yZWNvcmQucmVmdW5kLnZpZXciLCJwbGF0Zm9ybS5vcGVyYXRpb24tbG9nLnZpZXciLCJwbGF0Zm9ybS5maWxlLnNlYXJjaCIsInZpc2l0LnByaXNvbi50ZW5hbnQuc2VhcmNoIiwicGxhdGZvcm0ubWVudS5zZWFyY2giLCJ2aXNpdC5hY2NvdW50LmFsbC1wcmlzb24uc2VhcmNoIiwicGxhdGZvcm0uY291bnR5LnNlYXJjaCIsInBsYXRmb3JtLmltLXVzZXIudmlldyIsInZpc2l0LnRyYW5zYWN0aW9uLXJlY29yZC5yZWNoYXJnZS52aWV3IiwicGxhdGZvcm0ucm9sZS10ZW1wbGF0ZS5zZWFyY2giLCJwbGF0Zm9ybS51c2VyLnZpZXciLCJwbGF0Zm9ybS52ZXJzaW9uLnNlYXJjaCIsInBsYXRmb3JtLnZlcnNpb24udmlldyIsInZpc2l0LmZlZWRiYWNrLmRlbGV0ZSIsInBsYXRmb3JtLnJvbGUudmlldyIsInZpc2l0LnRyYW5zYWN0aW9uLXJlY29yZC5zZWFyY2giLCJwbGF0Zm9ybS5yb2xlLnNlYXJjaCIsInBsYXRmb3JtLnByb3ZpbmNlLnNlYXJjaCIsInZpc2l0LmFwcC1jcmFzaC1sb2cuc2VhcmNoIiwidmlzaXQuZmVlZGJhY2sucmVwbHkiLCJwbGF0Zm9ybS5jcmFzaC1sb2cudmlldyIsInZpc2l0LnByaXNvbi5maWxlZC12aXNpdC1jb25maWcuc2VhcmNoIiwidmlzaXQudmVyc2lvbi51cGRhdGUiLCJ2aXNpdC50ZXJtaW5hbC5zZWFyY2giLCJwbGF0Zm9ybS5kYXNoYm9hcmQiLCJwbGF0Zm9ybS5tZW51LnZpZXciLCJwbGF0Zm9ybS5wZXJtaXNzaW9uLnNlYXJjaCIsInBsYXRmb3JtLmNsaWVudC5zZWFyY2giLCJ2aXNpdC5mZWVkYmFjay5zZWFyY2giLCJ2aXNpdC5wcmlzb24uc2VhcmNoIiwidmlzaXQud2hpdGUtbGlzdC5hZGQiLCJwbGF0Zm9ybS5ncm91cC5zZWFyY2giLCJwbGF0Zm9ybS50ZW5hbnQuc2VhcmNoIiwidmlzaXQuYWR2ZXJ0aXNlbWVudC5zZWFyY2giLCJ2aXNpdC50ZXJtaW5hbC51cGRhdGUiLCJwbGF0Zm9ybS5jcmFzaC1sb2cuc2VhcmNoIiwidmlzaXQucHJpc29uLnZpc2l0LWNvbmZpZy51cGRhdGUiLCJwbGF0Zm9ybS5pbS1ub3RpZmljYXRpb24uc2VhcmNoIiwidmlzaXQudmVyc2lvbi5zZWFyY2giLCJwbGF0Zm9ybS5tZXNzYWdlLWNvbnN1bXB0aW9uLnNlYXJjaCIsInZpc2l0LnByaXNvbi5maWxlZC12aXNpdC1jb25maWcuYWRkIiwicGxhdGZvcm0uc21zLW5vdGlmaWNhdGlvbi52aWV3IiwidmlzaXQudHJhbnNhY3Rpb24tcmVjb3JkLmNvbnN1bXB0aW9uLnZpZXciLCJwbGF0Zm9ybS5zbXMtdmVyaWZpY2F0aW9uLWNvZGUuc2VhcmNoIiwidmlzaXQucHJpc29uLmFkZCIsInZpc2l0LnByaXNvbi51cGRhdGUiLCJ2aXNpdC53aGl0ZS1saXN0LnNlYXJjaCIsInZpc2l0LnByaXNvbi1hcmVhLnVwZGF0ZSIsInBsYXRmb3JtLm1lc3NhZ2UtY29uc3VtcHRpb24udmlldyIsInZpc2l0LnByaXNvbi52aXNpdC1hcHBsaWNhdGlvbi1jb25maWcudXBkYXRlIiwidmlzaXQuYWR2ZXJ0aXNlbWVudC5hZGQiLCJ2aXNpdC5hZHZlcnRpc2VtZW50LmRlbGV0ZSIsInBsYXRmb3JtLmNsaWVudC52aWV3IiwicGxhdGZvcm0ucGVybWlzc2lvbi52aWV3IiwicGxhdGZvcm0udGVuYW50LnZpZXciLCJ2aXNpdC53aGl0ZS1saXN0LmRlbGV0ZSIsInBsYXRmb3JtLmZlZWRiYWNrLnNlYXJjaCIsInBsYXRmb3JtLmdyb3VwLnZpZXciLCJwbGF0Zm9ybS51c2VyLnNlYXJjaCIsInZpc2l0LnByaXNvbi5maWxlZC12aXNpdC1jb25maWcudXBkYXRlIiwicGxhdGZvcm0uZmlsZS52aWV3Il0sImp0aSI6ImUzMDU5YjlmLWUxZDEtNDYxOS05OWM1LTEyMTk5OTNlMTE1ZCIsInRlbmFudCI6bnVsbCwiY2xpZW50X2lkIjoidmlzaXQuYWRtaW4iLCJncm91cCI6ImVtcGxveWVlIn0.Lnbardq4s06OCsnNR8Ni2OUOQjudTCEHfVHr_e2EUVI")
+    //   xhr.responseType = 'blob'
+    //   xhr.onload = function(e) {
+    //     if(this.status == 200) {
+    //       console.log(this.response)
+    //       var blob = this.response, filename = 'ddd.xls'
+    //       var a =document.createElement('a'), url = window.URL.createObjectURL(blob)
+    //       a.href = url
+    //       a.download = filename
+    //       document.body.appendChild(a)
+    //       a.click()
+    //       window.URL.revokeObjectURL(url)
+    //     }
+    //   }
+    //   xhr.send(formData)
+    // }
+    /* 
+    Promise对象是异步编程的一种解决方案，简单来说就是一个容器 里面保存着某个未来才会结束的事件(通常是一个异步操作)的结果
+    从语法上说,Promise是一个对象 从它可以获取异步操作的消息
+    特点: 1.对象的状态不受外界影响。Promise对象代表一个异步操作 有三种状态 pendding 进行中、fuifilled 已成功 rejected已失败
+    只要异步操作的结果 可以决定当前是哪一种状态
+    2.一旦状态改变 就不会再变 任何时候都可以得到这个结果 从 pendding 到 fulfilled(resolved) 和从 pendding 到 rejected(rejected)
+    resolve:异步操作成功时调用 并将异步操作的结果 作为参数传递出去/reject函数的作用是 在异步操作失败时调用 并将异步操作报出的错误 作为参数传递出去
+    then方法分别指定resolved和rejected状态的回调函数
+    function timeout(ms) {
+       return new Promise((resolve, reject) => {
+         setTimeout(resolve, ms, 'done')
+       });
+     }
+     timeout(100).then(value => {
+       console.log(value);
+     })
+     注意：Promise新建后立即执行
+     let promise = new Promise(function(resolve, reject) {
+       console.log('Promise')
+       resolve()
+     })
+     promise.then(function() {
+       console.log('resolved.')
+     })
+     console.log('Hi!');
+     Promise -> Hi! -> resolved.
+    使用Promise包装一个图片加载的异步操作
+     function loadImageAsync(url) {
+       return new Promise(function(resolve, reject) {
+         const image = new Image();
+         image.onload = function() {
+           resolve(image)
+         }
+         image.onerror = function() {
+           reject(new Error('Could not load image at ' + url))
+         };
+         image.src = url
+       })
+     }
+     const getJSON = function(url) {
+       const promise = new Promise((resolve, reject) => {
+         const handler = function() {
+           if(this.readyState !==4) return
+           if(this.stauts === 200) resolve(this.response)
+           else reject(new Error(this.statusText))
+         }
+         const client = new XMLHttpRequest()
+         client.open('GET', url);
+         client.onreadystatechange = handler;
+         client.responseType = 'json';
+         client.setRequestHeader('Accept', 'application/json');
+         client.send();
+       })
+       return promise;
+     }
+     resolve函数和reject函数调用时 都带有参数，如果调用resolve函数和reject函数时带有参数 那么它们的参数会被传递到回调函数。reject函数的参数通常是
+     Error对象的实例 表示抛出错误，resolve函数的参数除了正常的值以外 还可能是另一个Promise实例
+     const p1 = new Promise(function(resolve, reject) {})
+     const p2 = new Promise(function(resolve, reject) {
+       resolve(p1)
+     })
+     即一个异步操作的结果是返回另一个异步操作 注意此时p1的状态就会传递给p2，也就是说p1的状态决定了p2的状态
+     const p1 = new Promise((resolve, reject) => {
+       setTimeout(() => reject(new Error('fail')), 3000)
+     })
+     const p2 = new Promise((resolve, reject) => {
+       setTimeout(() => resolve(p1), 1000)
+     })
+     p2.then(result => console.log(result)).catch(error => console.log(error, 111))
+     注意 调用resolve或reject并不会终结Promise的参数函数的执行
+     new Promise((resolve, reject) => {
+       resolve(1);
+       console.log(2)
+     }).then(r => console.log(r))
+     调用resolve(1)以后 后面的console.log(2)还是会执行 并且首先打印出来 这是因为立即resolved的Promise是在本轮事件循环的末尾执行 总是晚于本轮循环的同步任务
+     Promise.prototype.then():then方法是定义在原型对象Promise.prototype上的 它的作用是为Promise实例添加状态改变时的回调函数，then方法返回的是一个
+     新的Promise实例，因此可以采用链式写法，采用链式的then 可以指定一组按照次序调用的回调函数
+     Promise.prototype.catch:是.then(null, rejection)或.then(undefined, rejection)的别名 用于指定发生错误时的回调函数.另外then方法指定的回调
+     函数 如果运行时抛出错误 也会被catch方法捕获
+     const promise = new Promise((resolve, reject) => {
+       throw new Error('test')
+     })
+     promise.catch(err => {
+       console.log(err)
+     })
+     const promise1 = new Promise((resolve, reject) => {
+       try {
+         throw new Error('test')
+       } catch(e) {
+         reject(e)
+       }
+     })
+     promise1.catch(err => console.log(err))
+     const promise2 = new Promise((resolve, reject) => reject(new Error('test')))
+     promise2.catch(err => console.log(err))
+     注意 如果Promise状态已经变成resolved 再抛出错误是无效的 因为Promise的状态一旦改变 就永久保持该状态 不会再变了
+     const promise = new Promise((resolve, reject) => {
+       resolve('ok')
+       throw new Error('test')
+     })
+     promise.then(val => console.log(val)).catch(err => console.log(err))
+     注 Promise对象的错误具有'冒泡'性质 会一直向后传递 直到被捕获为止 也就是说 错误总是会被下一个catch语句捕获， 更接近于同步的写法(try/catch)
+     注 如果没有使用catch方法指定错误处理的回调函数 Promise对象抛出的错误不会传递到外层代码 即不会有任何反应, 即不会退出进程 终止脚本执行
+     const someAsyncThing = function() {
+       return new Promise((resolve, reject) => {
+         resolve(x + 2)
+       })
+     }
+     someAsyncThing().then(() => console.log('everything is great'))
+     setTimeout(() => console.log(123), 2000)
+     const promise = new Promise((resolve, reject) => {
+       resolve('ok')
+       setTimeout(() => { throw new Error('test') }, 0)
+     })
+     promise.then(val => console.log(val))
+     上面代码中 Promise指定在下一轮'事件循环'再抛出错误，到了那个时候Promise的运行已经结束了 所以这个错误是在Promise函数体外抛出的
+     会冒泡到最外层，成为未捕获的错误
+     catch方法返回的还是一个Promise对象 因此后面还是可以接着调用then方法
+     const someAsyncThing = function() {
+       return new Promise((resolve, reject) => resolve(x+2))
+     }
+     someAsyncThing().catch(err => console.log('oh no', err)).then(() => console.log('carry on'))
+     如果没有报错 则会跳过catch方法/catch方法之中 还能再抛出错误
+     const someAsyncThing = function() {
+       return new Promise((resolve, reject) => {
+         resolve(x + 2)
+       })
+     }
+     someAsyncThing().then(() => someOtherAsyncThing()).catch(err => {
+       console.log('oh no', err);
+       y + 2;
+     }).then(() => console.log('carry on'))
+     setTimeout(() => console.log(232), 3000)
+     Promise.prototype.finally():用于指定不管Promise对象最后状态如何 都会执行的操作,finally方法的回调函数不接受任何参数，这就意味着
+     没有办法知道，前面的promise状态到底是fulfilled还是rejected 这表明 finally方法里面的操作 应该是与状态无关的 不依赖于Promise的执行结果
+     promise.then((result) => {}).catch((err) => {}).finally(() => {});
+     finally方法本质上是then方法的特例
+     Promise.prototype.finally = function(callback) {
+       let p = this.constructor
+       return this.then(val => p.resolve(callback()).then(() => val), reason => p.resolve(callback()).then(() => { throw reason}))
+     }
+     Promise.all：用于将多个Promise实例 包装成一个新的Promise实例.接受一个数组作为参数，参数是Promise实例 如果不是 就会先调用下面讲到的
+     Promise.resolve方法 将参数转为Promise实例 再进一步处理。Promise.all方法的参数可以不是数组 但必须具有iterator接口，且返回的每个成员
+     都是Promise实例
+     const p = Promise.all([p1, p2, p3])
+     p的状态由p1,p2,p3决定：1.只有p1,p2,p3的状态都变成fullfilled p的状态才会变成fulfilled 此时p1、p2、p3的返回值组成一个数组 传递给p的
+     回调函数；2.只要p1、p2、p3之中有一个被rejected， p的状态就变成rejected 此时第一个被rejected的实例的返回值 会传递给p的回调函数
+     const getJSON = function(url) {
+      const promise = new Promise(function(resolve, reject){
+      const handler = function() {
+        if (this.readyState !== 4) {
+          return;
+        }
+        if (this.status === 200) {
+          resolve(this.response);
+        } else {
+          reject(new Error(this.statusText));
+        }
+      };
+      const client = new XMLHttpRequest();
+      client.open("GET", url);
+      client.onreadystatechange = handler;
+      client.responseType = "json";
+      client.setRequestHeader("Accept", "application/json");
+      client.send();
+    })
+    return promise;
+  }
+  const promises = [2,3,5,7,11,13].map(id => getJSON('/post/'+ id + ".json"))
+  Promise.all(promises).then(posts => {}).catch(reason => {})
+  注意 如果作为参数的Promise实例 自己定义了catch方法 那么它一旦被rejected 并不会触发Promise.all()的catch方法
+  const p1 = new Promise((resolve, reject) => resolve('hello')).then(res => res).catch(err => err)
+  const p2 = new Promise((resolve, reject) => { throw new Error('报错了')}).then(res => res).catch(err => err)
+  Promise.all([p1,p2]).then(res => console.log(res)).catch(e => console.log(e))
+  注 p2有自己的catch方法 该方法返回一个新的Promise实例 p2指向的实际上是这个实例 该实例执行完catch方法后 也会变成resolved 导致Promise.all
+  方法参数里面的两个实例都会resolved 因此会调用then方法指定的回调函数 而不会调用catch方法指定的回调函数
+  Promise.race()同样是将多个Promise实例 包装成一个新的Promise实例 Promise.race([p1,p2,p3]),只要p1、p2、p3之中有一个实例率先改变状态
+  p的状态就跟着改变。那个率先改变的Promise实例的返回值 就传递给p的回调函数
+  const p = Promise.race([fetch('/resource-that-may-take-a-while'), new Promise((resolve, reject) => setTimeout(() => reject(new Error('request timeout')), 5000))])
+  p.then(console.log).catch(console.error)
+  Promise.resolve():将现有对象转为Promise对象 Promise.resolve(arg) 参数分为四种情况:1.参数是一个Promise实例，那么Promise.resolve将不做任何修改
+  原封不动地返回这个实例；2.参数是一个thenable对象：指的是具有then方法的对象，会将这个对象转为Promise对象 然后就立即执行thenable对象的then方法
+  let thenable = {
+    then(resolve, reject) {
+      resolve(42)
+    }
+  }, p1 = Promise.resolve(thenable)
+  p1.then(val => console.log(val))
+  3.参数不是具有then方法的对象 或者根本就不是对象，则Promise.resolve方法返回一个新的Promise对象 状态为resolved,该参数会同时传给回调函数
+  Promise.resolve('hello').then(val => console.log(val))
+  4.不带有任何参数：方法允许调用时不带参数，直接返回一个resolved状态的Promise对象
+  Promise.reject(reason)：也会返回一个新的Promise实例 该实例的状态为rejected
+  const p = Promise.reject('出错了')
+  p.catch(err => console.log(err))
+  注意 Promise.reject方法的参数 会原封不动地作为reject的理由 变成后续方法的参数
+  Promise.try()：实际开发中 不知道或者不想区分 函数f是同步函数还是异步操作 但是想用Promise来处理它
+  让同步函数同步执行 异步函数异步执行 并且让它们具有统一的API:1.使用async函数来写
+  const f = () => console.log('now');
+  (async () => f())();
+  console.log('next')
+  注：async() => f()会吃掉f()抛出的错误 所以 如果想捕获错误 要使用promise.catch方法
+  第二种写法是使用 new Promise()
+  const f = () => console.log('now');
+  (
+    () => new Promise(resolve => resolve(f()))
+  )();
+  console.log('next');
+  const f= () => console.log('now');
+  Promise.try(f);
+  console.log('next');
+  try...catch：去捕获同步错误
+  try {
+    promise.then().catch(异步错误)
+  }catch(e) {同步错误}
+  Promise.try(oprato).then().catch()
+    const f = () => setTimeout(() => console.log('now'), 1000);
+(async () => f())().then(res => console.log(22));
+console.log('next');
+  */
+
+  </script>
+</body>
+</html>

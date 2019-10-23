@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <script>
+    /* 
+    Proxy(代理):用于修改某些操作的默认行为，等同于在语言层面做出修改 所以属于一种'元编程'，即对编程语言进行编程
+    可以理解成 在目标对象之前架设一层'拦截'，外界对该对象的访问，都必须先通过这层拦截，因此提供了一种机制，
+    可以对外界的访问进行过滤和改写，用它来'代理'某些操作
+    let obj = new Proxy({}, {
+     get (target, key, receiver) {
+       console.log(`getting ${key}`);
+       return Reflect.get(target, key, receiver);
+     },
+     set(target, key, value, receiver) {
+       console.log(`setting ${key}`);
+       return Reflect.set(target, key, value, receiver);
+     }
+   })
+   console.log(obj.count = 1, ++obj.count)
+   ES6原生提供了Proxy构造函数 用来生成proxy实例/所要拦截的目标对象
+   let proxy = new Proxy(target, handler) target参数表示所要拦截的目标对象 handler参数也是一个对象 用来定制拦截行为
+   let proxy = new Proxy({}, {
+     get(target, property) {
+       return 35;
+     }
+   })
+   console.log(proxy.time, proxy.name, proxy.title)
+   注意 要使得Proxy起作用 必须针对Proxy实例进行操作，而不是针对目标对象进行操作，如果handler没有设置任何拦截 那就等同于
+   直接通向原对象, 访问proxy就等同于访问target
+   let target = {}, handler = {}, proxy = new Proxy(target, handler)
+    proxy.a = 'b'
+    console.log(target.a)
+    一个技巧是将Proxy对象 设置到Object.proxy属性 从而可以在object对象上调用
+    let object = { proxy: new Proxy(target, handler) }
+    Proxy实例也可以作为其他对象的原型对象
+    let proxy = new Proxy({}, {
+    get(target, property) {
+      return 35;
+    }
+  }), obj = Object.create(proxy)
+  console.log(obj.time)
+  同一个拦截器 可以设置多个操作
+  let handler = {
+    get(target, name) {
+      if( name === 'prototype' ) {
+        return Object.prototype;
+      }
+      return 'Hello, ' + name
+    },
+    // 拦截Proxy实例作为函数调用的操作 如proxy(...args) proxy.call(object, ...args) proxy.apply(object, ...args)
+    apply(target, thisBinding, args) {
+      return args[0];
+    },
+    construct(target, args) {
+      return { value: args[1] };
+    }
+  }, fproxy = new Proxy(function(x, y){
+    return x + y;
+  }, handler);
+  console.log(fproxy(1,2), new fproxy(), fproxy.prototype === Object.prototype, fproxy.cy)
+  Proxy支持的拦截操作一览 一个13种：
+  get(target, propKey, receiver):拦截对象属性的读取 如proxy.foo 和proxy['foo']
+  set(target, propKey, value, receiver):拦截对象属性的设置 如proxy.foo = v 或proxy['foo'] = v 返回一个布尔值
+  has(target,propKey): 拦截propKey in proxy的操作 返回一个布尔值
+  deleteProperty(target,propKey):拦截delete proxy[propKey]的操作 返回一个布尔值
+  ownKeys(target):拦截Object.getOwnPropertyNames(proxy)、object.getOwnPropertySymbols(proxy)、Object.keys(proxy)
+  for...in循环 返回一个数组 该方法返回目标对象所有自身的属性的属性名 而Object.keys()的返回结果仅包括目标对象自身的可遍历属性
+  getOwnPropertyDescriptor(target,propKey):拦截Object.getOwnPropertyDescriptor(proxy, propKey),返回属性得描述对象
+  defineProperty(target, propKey, proDesc):拦截Object.defineProperty(proxy,propKey,propDesc)、Object.defineProperties(proxy,propDesc)返回一个布尔值
+  preventExtensions(target):拦截Object.preventExtensions(proxy) 返回一个布尔值
+  注:Object.preventExtensions()方法让一个对象变的不可扩展，也就是永远不能再添加新属性/仅阻止添加自身得属性 但属性仍然可以添加到对象原型/返回已经不可以扩展得对象
+  let obj = {}, obj2 = Object.preventExtensions(obj), empty = {}, nonExtensible = { removable: true }
+  Object.preventExtensions(nonExtensible)
+  console.log(Object.defineProperty(Object.getPrototypeOf(nonExtensible), 'new', { value: 123 }))
+  console.log(obj === obj2, Object.isExtensible(empty), Object.isExtensible(obj))
+  getPrototypeOf(target):拦截Object.getPropertyOf(proxy) 返回一个对象
+  isExtensible(target):拦截Object.isExtensible(proxy) 返回一个布尔值
+  setPrototypeOf(target, proto):拦截Object.setPrototypeOf(proxy, proto) 返回一个布尔值， 如果目标对象是函数 那么还有两种额外操作可以拦截
+  apply(target, object, args):拦截Proxy实例作为函数调用的操作 proxy(...args) proxy.call(object, ...agrs) proxy.apply(object, ...agrs)
+  construct(target, args):拦截Proxy实例作为构造函数调用的操作 比如new proxy(...agrs)
+  实现方法详讲:
+  get():参数 目标对象、属性名和proxy实例本身(严格说 是操作行为所针对的对象)
+  注：如果指定的属性在指定对象或原型链中 则in运算符返回true in右操作数必须是一个对象值 如果是原始类型 则需要用其包装对象/in左操作数是一个字符串类型或者symbol
+  类型的属性名或者数组索引(非symbol类型将会强制转为字符串)
+  let color1 = new String('green'), arr1 = new Array();
+  arr1['name'] = 'cy'
+  arr1['age'] = 24
+  console.log("length" in color1, arr1, "name" in arr1)
+  */
+  // let person = {
+  //   name: '张三'
+  // }, proxy = new Proxy(person, {
+  //   get(target, propKey) {
+  //     if(propKey in target) {}
+  //   }
+  // })
+  let auth = [
+    "visit.prison-area.all-prison.search",
+    "platform.sequence.search",
+    "visit.prison-area.add",
+    "platform.tenant-proposal.search",
+    "visit.prison.config.update",
+    "platform.im-notification.view",
+    "platform.im-user.search",
+    "platform.role-template.view",
+    "platform.country.search",
+    "visit.terminal.add",
+    "platform.city.search",
+    "platform.operation-log.search",
+    "platform.sms-notification.search",
+    "visit.family-remittance.search",
+    "platform.feedback.view",
+    "platform.sequence.view",
+    "platform.tenant-proposal.view",
+    "visit.advertisement.update",
+    "platform.operation-log.view",
+    "platform.file.search",
+    "platform.menu.search",
+    "visit.account.all-prison.search",
+    "platform.county.search",
+    "platform.im-user.view",
+    "platform.role-template.search",
+    "platform.user.view",
+    "platform.version.search",
+    "visit.prison.visit-config.search",
+    "platform.version.view",
+    "visit.feedback.delete",
+    "platform.role.view",
+    "visit.transaction-record.search",
+    "platform.role.search",
+    "platform.province.search",
+    "visit.app-crash-log.search",
+    "visit.feedback.reply",
+    "platform.crash-log.view",
+    "visit.prison.filed-visit-config.search",
+    "visit.version.update",
+    "visit.terminal.search",
+    "platform.dashboard",
+    "platform.menu.view",
+    "platform.permission.search",
+    "platform.client.search",
+    "visit.feedback.search",
+    "visit.prison.search",
+    "visit.white-list.add",
+    "platform.group.search",
+    "platform.tenant.search",
+    "visit.advertisement.search",
+    "visit.terminal.update",
+    "platform.crash-log.search",
+    "visit.prison.visit-config.update",
+    "platform.im-notification.search",
+    "visit.version.search",
+    "platform.message-consumption.search",
+    "visit.prison.filed-visit-config.add",
+    "platform.sms-notification.view",
+    "platform.sms-verification-code.search",
+    "visit.prison.add",
+    "visit.prison.update",
+    "visit.white-list.search",
+    "visit.prison-area.update",
+    "platform.message-consumption.view",
+    "visit.prison.visit-application-config.update",
+    "visit.advertisement.add",
+    "visit.advertisement.delete",
+    "platform.client.view",
+    "platform.permission.view",
+    "platform.tenant.view",
+    "visit.white-list.delete",
+    "platform.feedback.search",
+    "platform.group.view",
+    "platform.user.search",
+    "visit.prison.filed-visit-config.update",
+    "platform.file.view",
+    "visit.white-list.search"
+  ], superAdmin = [{
+  path: '/',
+  meta: { hidden: true },
+  component: 'Frame',
+  children: [{
+    path: '/prison',
+    name: 'prison-manage-first',
+    meta: { breadcrumbName: '监狱管理' },
+    component: 'sadmin-prison/prison-tab',
+    // component: resolve => require(['@/views/sadmin-prison/prison-tab'], resolve),
+    children: [{
+      path: '/prison/list',
+      name: 'prison-list',
+      meta: { permission: 'visit.prison.search', breadcrumbName: '监狱列表' },
+      component: 'sadmin-prison/prison-list'
+      // component: resolve => require(['@/views/sadmin-prison/prison-list'], resolve)
+    }, {
+      path: '/tenant/list',
+      name: 'tenant-list',
+      meta: { permission: 'visit.prison.tenant.search', breadcrumbName: '租户列表' },
+      component: 'sadmin-prison/tenant-list'
+      // component: resolve => require(['@/views/sadmin-prison/tenant-list'], resolve)
+    }]
+  }]
+}, {
+  path: '/prison',
+  name: 'prison-manage',
+  meta: { hidden: true, breadcrumbName: '监狱管理' },
+  component: 'Frame',
+  children: [{
+    path: '/prison/add',
+    name: 'prison-add',
+    meta: { role: '0', permission: 'visit.prison.add', deep: true, breadcrumbName: '新增监狱' },
+    component: 'sadmin-prison/prison-add'
+    // component: resolve => require(['@/views/sadmin-prison/prison-add'], resolve)
+  }, {
+    path: '/prison/visit/:id',
+    name: 'prison-visit',
+    props: { role: 0 },
+    meta: { role: '0', deep: true, permission: 'visit.prison.filed-visit-config.search', breadcrumbName: '监狱实地会见配置' },
+    component: 'meeting/visit-config'
+    // component: resolve => require(['@/views/meeting/visit-config'], resolve)
+  // }, {
+  //   path: '/prison/meeting-remote/:id',
+  //   name: '监狱远程会见配置',
+  //   meta: { role: '0' },
+  //   component: resolve => require(['@/views/meeting/meeting-remote-edit'], resolve)
+  }, {
+    path: '/remote/edit/:id',
+    name: 'remote-edit-super-admin',
+    // permssion: 'edit'
+    meta: { role: '0', permission: 'visit.prison.visit-config.search', deep: true, breadcrumbName: '监狱远程会见配置' },
+    component: 'meeting/remote-edit'
+    // component: resolve => require(['@/views/meeting/remote-edit'], resolve)
+  }, {
+    path: '/prison/edit/:id',
+    name: 'prison-edit',
+    meta: {
+      // premission: 'edit'
+      permission: 'visit.prison.update',
+      role: '0',
+      deep: true,
+      breadcrumbName: '编辑监狱'
+    },
+    component: 'sadmin-prison/prison-edit'
+    // component: resolve => require(['@/views/sadmin-prison/prison-edit'], resolve)
+  }]
+}, {
+  path: '/prison-area',
+  name: 'prison-area-manage',
+  meta: { hidden: true, breadcrumbName: '监区管理' },
+  component: 'Frame',
+  children: [{
+    path: '/prison-area/list',
+    name: 'prison-area-list',
+    meta: { permission: 'visit.prison-area.all-prison.search', breadcrumbName: '监区列表' },
+    component: 'sadmin-prison-area/prison-area-list'
+    // component: resolve => require(['@/views/sadmin-prison-area/prison-area-list'], resolve)
+  // }, {
+  //   path: '/prison-area/add',
+  //   name: '新增监狱',
+  //   component: resolve => require(['@/views/sadmin-prison-area/prison-area-add'], resolve)
+  // }, {
+  //   path: '/prison-area/edit/:id',
+  //   name: '编辑监狱',
+  //   component: resolve => require(['@/views/sadmin-prison-area/prison-area-edit'], resolve)
+  }]
+}, {
+  path: '/prison-user',
+  name: 'prison-user-manage',
+  meta: { hidden: true, breadcrumbName: '监狱用户管理' },
+  component: 'Frame',
+  children: [{
+    path: '/prison-user/list',
+    name: 'prison-user-list',
+    props: { role: '0' },
+    meta: { permission: 'visit.account.all-prison.search', breadcrumbName: '监狱用户列表' },
+    component: 'sadmin-prison-user/prison-user-list'
+    // component: resolve => require(['@/views/sadmin-prison-user/prison-user-list'], resolve)
+  }, {
+    path: '/prison-user/edit/:id',
+    name: 'prison-user-edit',
+    meta: { role: '0', deep: true, breadcrumbName: '编辑监狱用户' },
+    component: 'sadmin-prison-user/prison-user-edit'
+    // component: resolve => require(['@/views/sadmin-prison-user/prison-user-edit'], resolve)
+  }, {
+    path: '/prison-user/add',
+    name: 'prison-user-add',
+    meta: { role: '0', deep: true, breadcrumbName: '新增监狱用户' },
+    component: 'sadmin-prison-user/prison-user-add'
+    // component: resolve => require(['@/views/sadmin-prison-user/prison-user-add'], resolve)
+  }]
+}, {
+  path: '/feedback',
+  name: 'feedback',
+  meta: { hidden: true, breadcrumbName: '意见反馈' },
+  component: 'Frame',
+  children: [{
+    path: '/feedback/list',
+    name: 'feedback-list',
+    meta: { permission: 'visit.feedback.search', breadcrumbName: '意见列表' },
+    component: 'sadmin-feedback/feedback-list'
+    // component: resolve => require(['@/views/sadmin-feedback/feedback-list'], resolve)
+  }]
+}, {
+  path: '/family-remittance',
+  name: 'family-remittance',
+  meta: { hidden: true, breadcrumbName: '家属汇款记录' },
+  component: 'Frame',
+  children: [{
+    path: '/family-remittance/list',
+    name: 'family-remittance-list',
+    meta: { permission: 'visit.family-remittance.search', breadcrumbName: '家属汇款' },
+    component: 'sadmin-remittance-record/family-remittance-list',
+    // component: resolve => require(['@/views/sadmin-remittance-record/family-remittance-list'], resolve)
+  }]
+}, {
+  path: '/',
+  meta: { hidden: true, cy: 'adad' },
+  component: 'Frame',
+  children: [{
+    path: '/trade',
+    name: 'trade',
+    meta: { breadcrumbName: '交易流水记录' },
+    component: 'trade/list-router',
+    // component: resolve => require(['@/views/trade/list-router'], resolve),
+    children: [
+      {
+        path: '/trade/list',
+        redirect: '/trade/account'
+      },
+      {
+        path: '/trade/account',
+        name: 'trade-account',
+        meta: { deep: true, permission: 'visit.transaction-record.search', breadcrumbName: '账户明细' },
+        component: 'trade/account'
+        // component: resolve => require(['@/views/trade/account'], resolve)
+      },
+      {
+        path: '/trade/recharge',
+        name: 'trade-rechange',
+        meta: { deep: true, permission: 'visit.transaction-record.recharge.view', breadcrumbName: '充值明细' },
+        component: 'trade/recharge'
+        // component: resolve => require(['@/views/trade/recharge'], resolve)
+      },
+      {
+        path: '/trade/consumption',
+        name: 'trade-consumption',
+        meta: { deep: true, permission: 'visit.transaction-record.consumption.view', breadcrumbName: '消费明细' },
+        component: 'trade/consumption'
+        // component: resolve => require(['@/views/trade/consumption'], resolve)
+      },
+      {
+        path: '/trade/refund',
+        name: 'trade-refund',
+        meta: { deep: true, permission: 'visit.transaction-record.refund.view', breadcrumbName: '退款明细' },
+        component: 'trade/refund'
+        // component: resolve => require(['@/views/trade/refund'], resolve)
+      }
+    ]
+  }]
+},
+{
+  path: '/advertisement',
+  name: 'advertisement-manage',
+  meta: { hidden: true, breadcrumbName: '广告管理' },
+  component: 'Frame',
+  children: [{
+    path: '/advertisement/list',
+    name: 'advertisement-list',
+    meta: { permission: 'visit.advertisement.search', breadcrumbName: '广告列表' },
+    component: 'sadmin-advertisement/advertisement-list'
+    // component: resolve => require(['@/views/sadmin-advertisement/advertisement-list'], resolve)
+  }, {
+    path: '/advertisement/add',
+    name: 'advertisement-add',
+    meta: { deep: true, permission: 'visit.advertisement.add', breadcrumbName: '新增广告' },
+    component: 'sadmin-advertisement/advertisement-add'
+    // component: resolve => require(['@/views/sadmin-advertisement/advertisement-add'], resolve)
+  }, {
+    path: '/advertisement/edit/:id',
+    name: 'advertisement-edit',
+    meta: { deep: true, permission: 'visit.advertisement.update', breadcrumbName: '编辑广告' },
+    component: 'sadmin-advertisement/advertisement-edit'
+    // component: resolve => require(['@/views/sadmin-advertisement/advertisement-edit'], resolve)
+  }]
+}, {
+  path: '/whitemember',
+  name: 'whitemember',
+  meta: { hidden: true, breadcrumbName: '白名单管理' },
+  children: [{
+    path: '/whitemember/list',
+    name: 'whitemember-list',
+    meta: { permission: 'visit.white-list.search', breadcrumbName: '白名单列表' },
+    component: 'sadmin-whitemember/whitemember-list'
+    // component: resolve => require(['@/views/sadmin-whitemember/whitemember-list'], resolve)
+  }, {
+    path: '/whitemember/lists',
+    name: 'whitemember-lists',
+    meta: { permission: 'visit.white-list.searchs', breadcrumbName: '白名单列表' },
+    component: 'sadmin-whitemember/whitemember-list'
+    // component: resolve => require(['@/views/sadmin-whitemember/whitemember-list'], resolve)
+  }]
+}, {
+  path: '/terminal',
+  name: 'terminal',
+  meta: { hidden: true, breadcrumbName: '终端管理' },
+  component: 'Frame',
+  children: [{
+    path: '/terminal/list',
+    name: 'terminal-list',
+    meta: { permission: 'visit.terminal.search', breadcrumbName: '终端列表' },
+    component: 'sadmin-terminal/terminal-list'
+    // component: resolve => require(['@/views/sadmin-terminal/terminal-list'], resolve)
+  }, {
+    path: '/terminal/add',
+    name: 'terminal-add',
+    meta: { deep: true, permission: 'visit.terminal.add', breadcrumbName: '新增终端' },
+    component: 'sadmin-terminal/terminal-add'
+    // component: resolve => require(['@/views/sadmin-terminal/terminal-add'], resolve)
+  }, {
+    path: '/terminal/edit/:id',
+    name: 'terminal-edit',
+    meta: { deep: true, permission: 'visit.terminal.update', breadcrumbName: '编辑终端' },
+    component: 'sadmin-terminal/terminal-edit'
+    // component: resolve => require(['@/views/sadmin-terminal/terminal-edit'], resolve)
+  }]
+}, {
+  path: '/version',
+  name: 'version',
+  meta: { hidden: true, breadcrumbName: '版本管理' },
+  component: 'Frame',
+  children: [{
+    path: '/version/list',
+    name: 'version-list',
+    meta: { permission: 'visit.version.search', breadcrumbName: '版本列表' },
+    component: 'sadmin-version/version-list'
+    // component: resolve => require(['@/views/sadmin-version/version-list'], resolve)
+  }]
+}, {
+  path: '/log',
+  name: 'log',
+  meta: { hidden: true, breadcrumbName: '日志' },
+  component: 'Frame',
+  children: [{
+    path: '/log/app-error',
+    name: 'log-app-error',
+    meta: { permission: 'visit.app-crash-log.search', breadcrumbName: 'APP崩溃日志' },
+    component: 'sadmin-log/app-error-list'
+    // component: resolve => require(['@/views/sadmin-log/app-error-list'], resolve)
+  }]
+}]
+// 现在两个问题 一个菜单路由里面可能有多个权限菜单 如果都存在 那就会多次重复 去重复的routes
+// 就是部分权限
+// function loadView(path) {
+//   return resovle => require([`@/views/${ path }`], resovle)
+// }
+//   function test(arr) {
+//     let DynamicRoutes = []
+//     for(let permission of arr) {
+//       // if(permission.includes('visit') && permission.includes('search')) {
+//         console.log(permission)
+//         for(let routes of superAdmin) {
+//           if(routes.meta && routes.meta.length && routes.meta.permission === permission) {
+//             // 这里是默认的顶层权限 暂时先规定如果拥有顶层权限就有所有子菜单的权限
+//             DynamicRoutes.push(routes)
+//             break;
+//           }
+//           if(routes.children && routes.children.length) {
+//            const result = res(routes.children, permission, routes)
+//            console.log('saas', result)
+//            if(result) {
+//             const routers = JSON.parse(JSON.stringify(routes)), temp = []
+//              if(Object.prototype.toString.call(result) === "[object Object]") {
+//                temp.push(result)
+//              }
+             
+//              routes.children = result
+//              DynamicRoutes.push(routers)
+//              break
+//             }
+//           }
+//         }
+//       // }
+//     }
+//     // console.log(DynamicRoutes,[...new Set(DynamicRoutes)])
+//     const routes = Array.from(new Set(DynamicRoutes))
+//     return filterAsyncRouter(routes)
+//   }
+  // 就是我要遍历它以及它的所有children 但是我要保存的是他本身
+  // 先实现 再优化
+  // 深度遍历 只能知道当前的、当前的children 并不知道它的parents、
+  // function res(arg, permission, parents) {
+  //   console.log(1111, parents)
+  //   const childrenArr = []
+  //   for(let val of arg) {
+  //     console.log(arg)
+  //     if(val.meta && val.meta.permission && val.meta.permission === permission) {
+  //       // console.log('res', val)
+  //       return val
+  //     }
+  //     if(val.children && val.children.length) {
+  //       const father = JSON.parse(JSON.stringify(parent))
+  //       const result = res(val.children, permission, val)
+  //       // console.log(111, result)
+  //       const parent = JSON.parse(JSON.stringify(val))
+  //       if(result) {
+  //         childrenArr.push(result)
+  //         // console.log(222, childrenArr, parent)
+  //         parent.children = childrenArr
+  //         // console.log('parent', parent)
+  //         return parent
+  //       }
+  //     }
+  //   }
+    // const routers = arg.filter(router => {
+    //   if(router.meta && router.meta.permission && router.meta.permission === permission) return router
+    //   if(router.children && router.children.length) {
+    //     const result = res(router.children, permission)
+    //     if(result) return result
+    //      return false
+    //   }
+    //   return false
+    // })
+    // return routers
+  // }
+  // function filterAsyncRouter(routes) {
+  //   const accessedRouters = routes.filter(router => {
+  //     if(router.component) {
+  //       if(router.component === 'Frame') {
+  //         router.component = 'xxx/xxx'
+  //       } else {
+  //         const component = router.component;
+  //         router.component = loadView(component)
+  //       }
+  //     }
+  //     if(router.children && router.children.length) {
+  //       router.children = filterAsyncRouter(router.children)
+  //     }
+  //     return true;
+  //   })
+  //   return accessedRouters;
+  // }
+  // test(auth)
+  // console.log(test(auth))
+// console.log(res([{
+//     path: '/terminal/list',
+//     name: 'terminal-list',
+//     meta: { permission: 'visit.terminal.search', breadcrumbName: '终端列表' },
+//     component: resolve => require(['@/views/sadmin-terminal/terminal-list'], resolve)
+//   }, {
+//     path: '/prison-area/list',
+//     name: 'prison-area-list',
+//     meta: { permission: 'visit.prison-area.all-prison.searchs', breadcrumbName: '监区列表' },
+//     component: resolve => require(['@/views/sadmin-prison-area/prison-area-list'], resolve)
+//     }, {
+//     path: '/terminal/add',
+//     name: 'terminal-add',
+//     meta: { deep: true, permission: 'visit.terminal.add', breadcrumbName: '新增终端' },
+//     component: resolve => require(['@/views/sadmin-terminal/terminal-add'], resolve),
+//     children: [{
+//       meta: {permission: 'visit.prison-area.all-prison.search'}
+//     }]
+//   }, {
+//     path: '/terminal/edit/:id',
+//     name: 'terminal-edit',
+//     meta: { deep: true, permission: 'visit.terminal.update', breadcrumbName: '编辑终端' },
+//     component: resolve => require(['@/views/sadmin-terminal/terminal-edit'], resolve)
+//   }], 'visit.prison-area.all-prison.search'))
+  // console.log(res(superAdmin, 'visit.prison-area.all-prison.search'))
+  // test(auth)
+//   let a = [{name: 'cy'}, {name: 'liyang'}, {name: 'ada'}], a1 = a.filter(val => {
+//     if(val.name === 'cy') val.name = 'test'
+//     return true
+//   })
+// console.log(a1, a)
+  // let b =[{"path":"https://github.com/elunez/eladmin","component":"Layout","children":[{"path":"https://github.com/elunez/eladmin","meta":{"title":"项目地址","icon":"github"}}]},{"name":"系统管理","path":"/system","redirect":"noredirect","component":"Layout","alwaysShow":true,"meta":{"title":"系统管理","icon":"system"},"children":[{"name":"用户管理","path":"user","component":"system/user/index","meta":{"title":"用户管理","icon":"peoples"}},{"name":"角色管理","path":"role","component":"system/role/index","meta":{"title":"角色管理","icon":"role"}},{"name":"权限管理","path":"permission","component":"system/permission/index","meta":{"title":"权限管理","icon":"permission"}},{"name":"菜单管理","path":"menu","component":"system/menu/index","meta":{"title":"菜单管理","icon":"menu"}},{"name":"部门管理","path":"dept","component":"system/dept/index","meta":{"title":"部门管理","icon":"dept"}},{"name":"岗位管理","path":"job","component":"system/job/index","meta":{"title":"岗位管理","icon":"Steve-Jobs"}},{"name":"字典管理","path":"dict","component":"system/dict/index","meta":{"title":"字典管理","icon":"dictionary"}}]},{"name":"系统监控","path":"/monitor","redirect":"noredirect","component":"Layout","alwaysShow":true,"meta":{"title":"系统监控","icon":"monitor"},"children":[{"name":"操作日志","path":"logs","component":"monitor/log/index","meta":{"title":"操作日志","icon":"log"}},{"name":"异常日志","path":"errorLog","component":"monitor/log/errorLog","meta":{"title":"异常日志","icon":"error"}},{"name":"系统缓存","path":"redis","component":"monitor/redis/index","meta":{"title":"系统缓存","icon":"redis"}},{"name":"SQL监控","path":"druid","component":"monitor/sql/index","meta":{"title":"SQL监控","icon":"sqlMonitor"}}]},{"name":"系统工具","path":"/sys-tools","redirect":"noredirect","component":"Layout","alwaysShow":true,"meta":{"title":"系统工具","icon":"sys-tools"},"children":[{"name":"定时任务","path":"timing","component":"system/timing/index","meta":{"title":"定时任务","icon":"timing"}},{"name":"代码生成","path":"generator","component":"generator/index","meta":{"title":"代码生成","icon":"dev"}},{"name":"接口文档","path":"swagger2","component":"tools/swagger/index","meta":{"title":"接口文档","icon":"swagger"}},{"name":"邮件工具","path":"email","component":"tools/email/index","meta":{"title":"邮件工具","icon":"email"}},{"name":"图床管理","path":"pictures","component":"tools/picture/index","meta":{"title":"图床管理","icon":"image"}},{"name":"七牛云存储","path":"qiniu","component":"tools/qiniu/index","meta":{"title":"七牛云存储","icon":"qiniu"}},{"name":"支付宝工具","path":"aliPay","component":"tools/aliPay/index","meta":{"title":"支付宝工具","icon":"alipay"}}]},{"name":"组件管理","path":"/components","redirect":"noredirect","component":"Layout","alwaysShow":true,"meta":{"title":"组件管理","icon":"zujian"},"children":[{"name":"图标库","path":"icon","component":"components/IconSelect","meta":{"title":"图标库","icon":"icon"}},{"name":"富文本","path":"tinymce","component":"components/Editor","meta":{"title":"富文本","icon":"fwb"}},{"name":"Markdown","path":"markdown","component":"components/MarkDown","meta":{"title":"Markdown","icon":"markdown"}},{"name":"Yaml编辑器","path":"yaml","component":"components/YamlEdit","meta":{"title":"Yaml编辑器","icon":"dev"}}]},{"name":"多级菜单","path":"/nested","redirect":"noredirect","component":"Layout","alwaysShow":true,"meta":{"title":"多级菜单","icon":"menu"},"children":[{"name":"二级菜单1","path":"menu1","redirect":"noredirect","component":"nested/menu1/index","alwaysShow":true,"meta":{"title":"二级菜单1","icon":"menu"},"children":[{"name":"三级菜单1","path":"menu1-1","component":"nested/menu1/menu1-1","meta":{"title":"三级菜单1","icon":"menu"}},{"name":"三级菜单2","path":"menu1-2","component":"nested/menu1/menu1-2","meta":{"title":"三级菜单2","icon":"menu"}}]},{"name":"二级菜单2","path":"menu2","component":"nested/menu2/index","meta":{"title":"二级菜单2","icon":"menu"}}]}],Layout = 'layout'
+//  const filterAsyncRouter = (routers) => { // 遍历后台传来的路由字符串，转换为组件对象
+//   const accessedRouters = routers.filter(router => {
+//     if (router.component) {
+//       if (router.component === 'Layout') { // Layout组件特殊处理
+//         router.component = Layout
+//       } else {
+//         const component = router.component
+//         router.component = loadView(component)
+//       }
+//     }
+//     if (router.children && router.children.length) {
+//       router.children = filterAsyncRouter(router.children)
+//     }
+//     return true
+//   })
+//   return accessedRouters
+// }
+// const loadView = (view) => { // 路由懒加载
+//   return () => import(`@/views/${view}`)
+// }
+// console.log(filterAsyncRouter(b), b)
+// const cy = [{name: 'cy'}, {name: 'wcx'}]
+// console.log(cy.includes({name: 'cy'}))
+// const a = [{
+//   path: '*',
+//   redirect: '/dashboard'
+// }], b = {
+//   path: '*',
+//   redirect: '/dashboard'
+// }
+// console.log(a.includes(b))
+let helper = {
+  loadView(path) {
+    return resovle => require([`@/views/${ path }`], resovle)
+  }
+}
+let menus = [
+    {
+        "id": "92c8f08e-b346-11e9-980a-0242c0a8f002",
+        "clientKey": "visit.admin",
+        "clientName": "远程探视后台管理",
+        "name": "监狱基本信息管理",
+        "path": "/jails/detail",
+        "icon": "icon-jianyujibenxinxi",
+        "permission": "visit.prison-profile.search",
+        "ordinal": 3,
+        "parentId": null,
+        "parentName": null,
+        "children": []
+    },
+    {
+        "id": "92c89e88-b346-11e9-980a-0242c0a8f002",
+        "clientKey": "visit.admin",
+        "clientName": "远程探视后台管理",
+        "name": "狱务公开信息管理",
+        "path": "/prison-affairs-public",
+        "icon": "icon-yuwugongkaixinxi",
+        "permission": null,
+        "ordinal": 4,
+        "parentId": null,
+        "parentName": null,
+        "children": [
+            {
+                "id": "92c966d9-b346-11e9-980a-0242c0a8f002",
+                "clientKey": "visit.admin",
+                "clientName": "远程探视后台管理",
+                "name": "狱务公开",
+                "path": "/prison-affairs-public/prison-affairs-public",
+                "icon": null,
+                "permission": null,
+                "ordinal": 1,
+                "parentId": "92c89e88-b346-11e9-980a-0242c0a8f002",
+                "parentName": "狱务公开信息管理",
+                "children": [
+                    {
+                        "id": "92c9a95e-b346-11e9-980a-0242c0a8f002",
+                        "clientKey": "visit.admin",
+                        "clientName": "远程探视后台管理",
+                        "name": "减刑假释",
+                        "path": "/prison-affairs-public/prison-affairs-public/4",
+                        "icon": null,
+                        "permission": "visit.sentence-parole.search",
+                        "ordinal": 1,
+                        "parentId": "92c966d9-b346-11e9-980a-0242c0a8f002",
+                        "parentName": "狱务公开",
+                        "children": []
+                    },
+                    {
+                        "id": "92c9ab8a-b346-11e9-980a-0242c0a8f002",
+                        "clientKey": "visit.admin",
+                        "clientName": "远程探视后台管理",
+                        "name": "暂予监外执行",
+                        "path": "/prison-affairs-public/prison-affairs-public/5",
+                        "icon": null,
+                        "permission": "visit.execution-outside-of-prison.search",
+                        "ordinal": 2,
+                        "parentId": "92c966d9-b346-11e9-980a-0242c0a8f002",
+                        "parentName": "狱务公开",
+                        "children": []
+                    },
+                    {
+                        "id": "92c9aca2-b346-11e9-980a-0242c0a8f002",
+                        "clientKey": "visit.admin",
+                        "clientName": "远程探视后台管理",
+                        "name": "社会帮教",
+                        "path": "/prison-affairs-public/prison-affairs-public/6",
+                        "icon": null,
+                        "permission": "visit.social-education.search",
+                        "ordinal": 3,
+                        "parentId": "92c966d9-b346-11e9-980a-0242c0a8f002",
+                        "parentName": "狱务公开",
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "id": "92c97f4d-b346-11e9-980a-0242c0a8f002",
+                "clientKey": "visit.admin",
+                "clientName": "远程探视后台管理",
+                "name": "工作动态",
+                "path": "/prison-affairs-public/working-dynamics",
+                "icon": null,
+                "permission": "visit.work-trend.search",
+                "ordinal": 2,
+                "parentId": "92c89e88-b346-11e9-980a-0242c0a8f002",
+                "parentName": "狱务公开信息管理",
+                "children": []
+            },
+            {
+                "id": "92c980c4-b346-11e9-980a-0242c0a8f002",
+                "clientKey": "visit.admin",
+                "clientName": "远程探视后台管理",
+                "name": "投诉建议公示",
+                "path": "/prison-affairs-public/complaints-suggestions",
+                "icon": null,
+                "permission": "visit.complaint-suggestion.search",
+                "ordinal": 3,
+                "parentId": "92c89e88-b346-11e9-980a-0242c0a8f002",
+                "parentName": "狱务公开信息管理",
+                "children": []
+            }
+        ]
+    },
+    {
+        "id": "92c8f291-b346-11e9-980a-0242c0a8f002",
+        "clientKey": "visit.admin",
+        "clientName": "远程探视后台管理",
+        "name": "远程会见配置",
+        "path": "/remote/edit",
+        "icon": "icon-yuanchenghuijian",
+        "permission": "visit.remote-visit-configure.search",
+        "ordinal": 5,
+        "parentId": null,
+        "parentName": null,
+        "children": []
+    },
+    {
+        "id": "92c8f37c-b346-11e9-980a-0242c0a8f002",
+        "clientKey": "visit.admin",
+        "clientName": "远程探视后台管理",
+        "name": "实地探监配置",
+        "path": "/visit/config",
+        "icon": "icon-shidihuijian",
+        "permission": "visit.field-visit-configure.search",
+        "ordinal": 6,
+        "parentId": null,
+        "parentName": null,
+        "children": []
+    }
+], infomation = [{
+  path: '/jails',
+  name: 'jails',
+  meta: { hidden: true, breadcrumbName: '监狱基本信息管理' },
+  children: [{
+    path: '/jails/list',
+    redirect: '/jails/detail'
+  }, {
+    path: '/jails/detail',
+    name: 'jails-list',
+    component: helper.loadView('jail/detail'),
+    // component: resolve => require(['@/views/jail/detail'], resolve),
+    meta: { permission: 'visit.prison-profile.view', breadcrumbName: '监狱基本信息' }
+  }, {
+    path: '/jails/edit/:id',
+    name: 'jails-edit',
+    meta: {
+      // permission: 'edit',
+      permission: 'visit.prison-profile.update',
+      role: '3',
+      deep: true,
+      breadcrumbName: '编辑监狱基本信息'
+    },
+    component: helper.loadView('sadmin-prison/prison-edit')
+    // component: resolve => require(['@/views/sadmin-prison/prison-edit'], resolve)
+  }]
+}, {
+  path: '/prison-affairs-public',
+  name: 'prison-affairs-public-manage',
+  meta: { hidden: true, breadcrumbName: '狱务公开信息管理' },
+  children: [{
+    path: '/prison-affairs-public/prison-affairs-public',
+    name: 'prison-affairs-public-prison-affairs-public',
+    meta: { typeId: 1, hidden: true, breadcrumbName: '狱务公开' },
+    component: helper.loadView('common/router-view'),
+    // component: resolve => require(['@/views/common/router-view'], resolve),
+    children: [
+      {
+        path: '/prison-affairs-public/prison-affairs-public/4',
+        name: 'prison-affairs-public-sentence-parole',
+        meta: { typeId: 4, permission: 'visit.sentence-parole.search', breadcrumbName: '减刑假释' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/list'], resolve)
+        component: helper.loadView('info-prison-affairs-public/list')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/4/add',
+        name: 'prison-affairs-public-sentence-parole-add',
+        meta: { typeId: 4, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/4', permission: 'visit.sentence-parole.add', breadcrumbName: '新增减刑假释' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+        component: helper.loadView('info-prison-affairs-public/add')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/4/edit/:id',
+        name: 'prison-affairs-public-sentence-parole-edit',
+        meta: { typeId: 4, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/4', permission: 'visit.sentence-parole.update', breadcrumbName: '编辑减刑假释' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+        component: helper.loadView('info-prison-affairs-public/edit')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/5',
+        name: 'prison-affairs-public-execution-outside-of-prison',
+        meta: { typeId: 5, permission: 'visit.execution-outside-of-prison.search', breadcrumbName: '暂予监外执行' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/list'], resolve)
+        component: helper.loadView('info-prison-affairs-public/list')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/5/add',
+        name: 'prison-affairs-public-execution-outside-of-prison-add',
+        meta: { typeId: 5, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/5', permission: 'visit.execution-outside-of-prison.add', breadcrumbName: '新增暂予监外执行' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+        component: helper.loadView('info-prison-affairs-public/add')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/5/edit/:id',
+        name: 'prison-affairs-public-execution-outside-of-prison-edit',
+        meta: { typeId: 5, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/5', permission: 'visit.execution-outside-of-prison.update', breadcrumbName: '编辑暂予监外执行' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+        component: helper.loadView('info-prison-affairs-public/edit')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/6',
+        name: 'prison-affairs-public-social-education',
+        meta: { typeId: 6, permission: 'visit.social-education.search', breadcrumbName: '社会帮教' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/list'], resolve)
+        component: helper.loadView('info-prison-affairs-public/list')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/6/add',
+        name: 'prison-affairs-public-social-education-add',
+        meta: { typeId: 6, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/6', permission: 'visit.social-education.add', breadcrumbName: '新增社会帮教' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+        component: helper.loadView('info-prison-affairs-public/add')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/6/edit/:id',
+        name: 'prison-affairs-public-social-education-edit',
+        meta: { typeId: 6, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/6', permission: 'visit.social-education.update', breadcrumbName: '编辑社会帮教' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+        component: helper.loadView('info-prison-affairs-public/edit')
+      }
+    ]
+  },
+  // {
+  //   path: '/prison-affairs-public/prison-affairs-public/add',
+  //   name: '新增狱务公开信息',
+  //   meta: { typeId: 1, deep: true, permission: '' },
+  //   component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+  // }, {
+  //   path: '/prison-affairs-public/prison-affairs-public/edit/:id',
+  //   name: '编辑狱务公开信息',
+  //   meta: { typeId: 1, deep: true, permission: '' },
+  //   component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+  // },
+  {
+    path: '/prison-affairs-public/working-dynamics',
+    name: 'prison-affairs-public-working-dynamics',
+    meta: { typeId: 2, permission: 'visit.work-trend.search', breadcrumbName: '工作动态' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/list'], resolve)
+    component: helper.loadView('info-prison-affairs-public/list')
+  }, {
+    path: '/prison-affairs-public/working-dynamics/add',
+    name: 'prison-affairs-public-working-dynamics-add',
+    meta: { typeId: 2, deep: true, activeMenu: '/prison-affairs-public/working-dynamics', permission: 'visit.work-trend.add', breadcrumbName: '新增工作动态' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+    component: helper.loadView('info-prison-affairs-public/add')
+  }, {
+    path: '/prison-affairs-public/working-dynamics/edit/:id',
+    name: 'prison-affairs-public-working-dynamics-edit',
+    meta: { typeId: 2, deep: true, activeMenu: '/prison-affairs-public/working-dynamics', permission: 'visit.work-trend.update', breadcrumbName: '编辑工作动态' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+    component: helper.loadView('info-prison-affairs-public/edit')
+  }, {
+    path: '/prison-affairs-public/complaints-suggestions',
+    name: 'prison-affairs-public-complaints-suggestions',
+    meta: { typeId: 3, permission: 'visit.complaint-suggestion.search', breadcrumbName: '投诉建议公示' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/list'], resolve)
+    component: helper.loadView('info-prison-affairs-public/list')
+  }, {
+    path: '/prison-affairs-public/complaints-suggestions/add',
+    name: 'prison-affairs-public-complaints-suggestions-add',
+    meta: { typeId: 3, deep: true, activeMenu: '/prison-affairs-public/complaints-suggestions', permission: 'visit.complaint-suggestion.add', breadcrumbName: '新增投诉/建议' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+    component: helper.loadView('info-prison-affairs-public/add')
+  }, {
+    path: '/prison-affairs-public/complaints-suggestions/edit/:id',
+    name: 'prison-affairs-public-complaints-suggestions-edit',
+    meta: { typeId: 3, deep: true, activeMenu: '/prison-affairs-public/complaints-suggestions', permission: 'visit.complaint-suggestion.update', breadcrumbName: '编辑投诉/建议' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+    component: helper.loadView('info-prison-affairs-public/edit')
+  }]
+}, {
+  path: '/remote',
+  name: 'remote',
+  meta: { hidden: true, breadcrumbName: '远程会见信息' },
+  children: [{
+    path: '/remote/edit',
+    name: 'remote-edit-information',
+    // permission: 'edit' 这里需要注意修改
+    meta: { role: '3', permission: 'visit.remote-visit-configure.search', breadcrumbName: '远程会见配置' },
+    // component: resolve => require(['@/views/meeting/remote-edit'], resolve)
+    component: helper.loadView('meeting/remote-edit')
+  }]
+}, {
+  path: '/visit',
+  name: 'visit',
+  meta: { hidden: true, breadcrumbName: '实地探监信息' },
+  children: [{
+    path: '/visit/config',
+    name: 'visit-config',
+    props: { role: 3 },
+    meta: { role: '3', permission: 'visit.field-visit-configure.search', breadcrumbName: '实地探监配置' },
+    // component: resolve => require(['@/views/meeting/visit-config'], resolve)
+    component: helper.loadView('meeting/visit-config')
+  }]
+}]
+function getMenuPermissions(menus, s = []) {
+  menus.map(val => {
+    let temp = []
+    if(val.permission) temp.push(val.permission)
+    if(val.children && val.children.length) getMenuPermissions(val.children, temp)
+    s.push(temp)
+  })
+  return s
+}
+// console.log(getMenuPermissions(menus))
+// 现在换个思路来考虑下问题 第一步减少遍历范围 变成菜单权限数组 
+// 现在先来实现根据权限来获取详细的菜单
+// function newTest(menusPermessions, routes, auth = [], result = []) {
+//   menusPermessions.map(permission => {
+//     if(Array.isArray(permission)) {
+//       newTest(permission, routes, result)
+//     }
+//     else {
+//       routes.map(route => {
+//         let temp = []
+//         if(route.meta && route.meta.permission && route.meta.permission === permission) {
+//           temp.push(route)
+//         }
+//         if(route.children && route.children.length) newTest([permission], route.children, temp)
+//         console.log(temp)
+//       })
+//     }
+//   })
+// }
+// newTest(getMenuPermissions(menus), infomation)
+// let a = [1,2,3,4,5,6,7]
+// for(let val of a) {
+//   a.splice(a.indexOf(2),1)
+//   console.log(val)
+// }
+let a = [
+{
+  path: '/remote',
+  name: 'remote',
+  meta: { hidden: true, breadcrumbName: '远程会见信息' },
+  children: [{
+    path: '/remote/edit',
+    name: 'remote-edit-information',
+    // permission: 'edit' 这里需要注意修改
+    meta: { role: '3', permission: 'visit.remote-visit-configure.search', breadcrumbName: '远程会见配置' },
+    // component: resolve => require(['@/views/meeting/remote-edit'], resolve)
+    component: helper.loadView('meeting/remote-edit')
+  }]
+}, {
+  path: '/visit',
+  name: 'visit',
+  meta: { hidden: true, breadcrumbName: '实地探监信息' },
+  children: [{
+    path: '/visit/config',
+    name: 'visit-config',
+    props: { role: 3 },
+    meta: { role: '3', permission: 'visit.field-visit-configure.search', breadcrumbName: '实地探监配置' },
+    // component: resolve => require(['@/views/meeting/visit-config'], resolve)
+    component: helper.loadView('meeting/visit-config')
+  }]
+},
+{
+  path: '/prison-affairs-public',
+  name: 'prison-affairs-public-manage',
+  meta: { hidden: true, breadcrumbName: '狱务公开信息管理'},
+  children: [{
+    path: '/prison-affairs-public/prison-affairs-public',
+    name: 'prison-affairs-public-prison-affairs-public',
+    meta: { typeId: 1, hidden: true, breadcrumbName: '狱务公开' },
+    component: helper.loadView('common/router-view'),
+    // component: resolve => require(['@/views/common/router-view'], resolve),
+    children: [
+      {
+        path: '/prison-affairs-public/prison-affairs-public/4',
+        name: 'prison-affairs-public-sentence-parole',
+        meta: { typeId: 4, permission: 'visit.sentence-parole.search', breadcrumbName: '减刑假释' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/list'], resolve)
+        component: helper.loadView('info-prison-affairs-public/list')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/4/add',
+        name: 'prison-affairs-public-sentence-parole-add',
+        meta: { typeId: 4, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/4', permission: 'visit.sentence-parole.add', breadcrumbName: '新增减刑假释' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+        component: helper.loadView('info-prison-affairs-public/add')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/4/edit/:id',
+        name: 'prison-affairs-public-sentence-parole-edit',
+        meta: { typeId: 4, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/4', permission: 'visit.sentence-parole.update', breadcrumbName: '编辑减刑假释' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+        component: helper.loadView('info-prison-affairs-public/edit')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/5',
+        name: 'prison-affairs-public-execution-outside-of-prison',
+        meta: { typeId: 5, permission: 'visit.execution-outside-of-prison.search', breadcrumbName: '暂予监外执行' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/list'], resolve)
+        component: helper.loadView('info-prison-affairs-public/list')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/5/add',
+        name: 'prison-affairs-public-execution-outside-of-prison-add',
+        meta: { typeId: 5, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/5', permission: 'visit.execution-outside-of-prison.add', breadcrumbName: '新增暂予监外执行' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+        component: helper.loadView('info-prison-affairs-public/add')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/5/edit/:id',
+        name: 'prison-affairs-public-execution-outside-of-prison-edit',
+        meta: { typeId: 5, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/5', permission: 'visit.execution-outside-of-prison.update', breadcrumbName: '编辑暂予监外执行' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+        component: helper.loadView('info-prison-affairs-public/edit')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/6',
+        name: 'prison-affairs-public-social-education',
+        meta: { typeId: 6, permission: 'visit.social-education.search', breadcrumbName: '社会帮教' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/list'], resolve)
+        component: helper.loadView('info-prison-affairs-public/list')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/6/add',
+        name: 'prison-affairs-public-social-education-add',
+        meta: { typeId: 6, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/6', permission: 'visit.social-education.add', breadcrumbName: '新增社会帮教' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+        component: helper.loadView('info-prison-affairs-public/add')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/6/edit/:id',
+        name: 'prison-affairs-public-social-education-edit',
+        meta: { typeId: 6, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/6', permission: 'visit.social-education.update', breadcrumbName: '编辑社会帮教' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+        component: helper.loadView('info-prison-affairs-public/edit')
+      }
+    ]
+  },
+  // {
+  //   path: '/prison-affairs-public/prison-affairs-public/add',
+  //   name: '新增狱务公开信息',
+  //   meta: { typeId: 1, deep: true, permission: '' },
+  //   component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+  // }, {
+  //   path: '/prison-affairs-public/prison-affairs-public/edit/:id',
+  //   name: '编辑狱务公开信息',
+  //   meta: { typeId: 1, deep: true, permission: '' },
+  //   component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+  // },
+  {
+    path: '/prison-affairs-public/working-dynamics',
+    name: 'prison-affairs-public-working-dynamics',
+    meta: { typeId: 2, permission: 'visit.work-trend.search', breadcrumbName: '工作动态' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/list'], resolve)
+    component: helper.loadView('info-prison-affairs-public/list')
+  }, {
+    path: '/prison-affairs-public/working-dynamics/add',
+    name: 'prison-affairs-public-working-dynamics-add',
+    meta: { typeId: 2, deep: true, activeMenu: '/prison-affairs-public/working-dynamics', permission: 'visit.work-trend.add', breadcrumbName: '新增工作动态' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+    component: helper.loadView('info-prison-affairs-public/add')
+  }, {
+    path: '/prison-affairs-public/working-dynamics/edit/:id',
+    name: 'prison-affairs-public-working-dynamics-edit',
+    meta: { typeId: 2, deep: true, activeMenu: '/prison-affairs-public/working-dynamics', permission: 'visit.work-trend.update', breadcrumbName: '编辑工作动态' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+    component: helper.loadView('info-prison-affairs-public/edit')
+  }, {
+    path: '/prison-affairs-public/complaints-suggestions',
+    name: 'prison-affairs-public-complaints-suggestions',
+    meta: { typeId: 3, permission: 'visit.complaint-suggestion.search', breadcrumbName: '投诉建议公示' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/list'], resolve)
+    component: helper.loadView('info-prison-affairs-public/list')
+  }, {
+    path: '/prison-affairs-public/complaints-suggestions/add',
+    name: 'prison-affairs-public-complaints-suggestions-add',
+    meta: { typeId: 3, deep: true, activeMenu: '/prison-affairs-public/complaints-suggestions', permission: 'visit.complaint-suggestion.add', breadcrumbName: '新增投诉/建议' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+    component: helper.loadView('info-prison-affairs-public/add')
+  }, {
+    path: '/prison-affairs-public/complaints-suggestions/edit/:id',
+    name: 'prison-affairs-public-complaints-suggestions-edit',
+    meta: { typeId: 3, deep: true, activeMenu: '/prison-affairs-public/complaints-suggestions', permission: 'visit.complaint-suggestion.update', breadcrumbName: '编辑投诉/建议' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+    component: helper.loadView('info-prison-affairs-public/edit')
+  }]
+}
+]
+function test1(auth, routes) {
+  // auth.map(permission => {
+  //   // 第一步先是看对应的权限是否有对应的路由 如果没有就跳过当前循环 进入到一下次循环
+  //   const currentRoute = getSome(permission, routes)
+  //   if(!currentRoute || !currentRoute.length) continue
+  //   // 第二步就是得到当前权限路由的所以层级权限数组
+  //   const menusPermessions = getMenusPermissions(currentRoute)
+  //   // 第三步通过对比权限数组和路由数组 来确定当前路由具体精确的路由
+  // })
+  for(let permission of auth) {
+    const currentRoute = getSome(permission, routes)
+    if(!currentRoute || !currentRoute.length) continue
+    const menusPermessions = getMenusPermissions(currentRoute)
+    // console.log(currentRoute, menusPermessions)
+  }
+}
+function getSome(permission, route) {
+  let temp = []
+  for(let val of route) {
+    if(val.meta && val.meta.permission && val.meta.permission === permission) {
+      temp.push(val)
+      return temp
+    }
+    if(val.children && val.children.length) {
+      const result = getChildrenSome(permission, val.children)
+      if(result) {
+        temp.push(val)
+        return temp
+      }
+    }
+  }
+}
+function getChildrenSome(permission, children) {
+  for(let child of children) {
+    if(child.meta && child.meta.permission && child.meta.permission === permission) return child
+    if(child.children && child.children.length) {
+      const result = getChildrenSome(permission, child.children)
+      if(result) return result
+    }
+  }
+}
+function getMenusPermissions(menus, accumulator = []) {
+  menus.map(val => {
+    let temp = []
+    if (val.meta && val.meta.permission) temp.push(val.meta.permission)
+    if (val.children && val.children.length) getMenusPermissions(val.children, temp)
+    if (temp.length) accumulator.push(temp)
+  })
+  return accumulator
+}
+function getExcteRouter(auth, menusPermessions, router) {
+  for(let permission of auth) {
+    for(let value of menusPermessions) {
+      for(let child of value) {}
+    }
+  }
+}
+test1(['visit.work-trend.update'], a)
+let dasdasd = [{name: 'cy', age: 24, children: [{
+  name: 'cxy',
+  age: 2
+}]}, {name: 'wcx', age: 21, children: [{
+  name: 'wcxx',
+  age: 2
+}]}], m = [1,3,4,5,6]
+let b = dasdasd.slice(0)
+for(let val of b) {
+  b = b.filter(val => {
+    return val.name !== 'cy'
+  })
+  // console.log(b)
+}
+// console.log(dasdasd)
+function asd(s = s.slice(0)) {
+  s = s.filter(val => {
+    return val.name !== 'cy'
+  })
+  return s
+}
+// console.log(asd(dasdasd), dasdasd)
+let tempnow1 = [1,2,3,4,5,7,8], tempnow2 = [2,4,8,9]
+tempnow1 = tempnow1.filter(value => {
+  let result = tempnow2.map(val => {
+    if(value === val) return true
+  })
+  // console.log([...new Set(result)])
+  if([...new Set(result)].length === 1 && [...new Set(result)][0] === undefined) return true
+})
+// console.log(tempnow1)
+let formap = [1,2,3,5,6]
+formap.map(val => {
+  // console.log(val)
+  formap = [...[3,4,6]]
+})
+let testA = [{
+  path: '/prison-affairs-public',
+  name: 'prison-affairs-public-manage',
+  meta: { hidden: true, breadcrumbName: '狱务公开信息管理'},
+  children: [{
+    path: '/prison-affairs-public/prison-affairs-public',
+    name: 'prison-affairs-public-prison-affairs-public',
+    meta: { typeId: 1, hidden: true, breadcrumbName: '狱务公开' },
+    component: helper.loadView('common/router-view'),
+    // component: resolve => require(['@/views/common/router-view'], resolve),
+    children: [
+      {
+        path: '/prison-affairs-public/prison-affairs-public/4',
+        name: 'prison-affairs-public-sentence-parole',
+        meta: { typeId: 4, permission: 'visit.sentence-parole.search', breadcrumbName: '减刑假释' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/list'], resolve)
+        component: helper.loadView('info-prison-affairs-public/list')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/4/add',
+        name: 'prison-affairs-public-sentence-parole-add',
+        meta: { typeId: 4, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/4', permission: 'visit.sentence-parole.add', breadcrumbName: '新增减刑假释' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+        component: helper.loadView('info-prison-affairs-public/add')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/4/edit/:id',
+        name: 'prison-affairs-public-sentence-parole-edit',
+        meta: { typeId: 4, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/4', permission: 'visit.sentence-parole.update', breadcrumbName: '编辑减刑假释' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+        component: helper.loadView('info-prison-affairs-public/edit')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/5',
+        name: 'prison-affairs-public-execution-outside-of-prison',
+        meta: { typeId: 5, permission: 'visit.execution-outside-of-prison.search', breadcrumbName: '暂予监外执行' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/list'], resolve)
+        component: helper.loadView('info-prison-affairs-public/list')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/5/add',
+        name: 'prison-affairs-public-execution-outside-of-prison-add',
+        meta: { typeId: 5, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/5', permission: 'visit.execution-outside-of-prison.add', breadcrumbName: '新增暂予监外执行' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+        component: helper.loadView('info-prison-affairs-public/add')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/5/edit/:id',
+        name: 'prison-affairs-public-execution-outside-of-prison-edit',
+        meta: { typeId: 5, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/5', permission: 'visit.execution-outside-of-prison.update', breadcrumbName: '编辑暂予监外执行' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+        component: helper.loadView('info-prison-affairs-public/edit')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/6',
+        name: 'prison-affairs-public-social-education',
+        meta: { typeId: 6,  breadcrumbName: '社会帮教' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/list'], resolve)
+        component: helper.loadView('info-prison-affairs-public/list'),
+        children: [{
+          path: '/prison-affairs-public/prison-affairs-public/6',
+        name: 'prison-affairs-public-social-education',
+        meta: { typeId: 6, permission: 'visit.social-education.search', breadcrumbName: '社会帮教' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/list'], resolve)
+        component: helper.loadView('info-prison-affairs-public/list')
+        }, {
+          path: '/prison-affairs-public/prison-affairs-public/6',
+        name: 'prison-affairs-public-social-education',
+        meta: { typeId: 6, permission: 'visit.social-education.searc444h', breadcrumbName: '社会帮教' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/list'], resolve)
+        component: helper.loadView('info-prison-affairs-public/list')
+        }]
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/6/add',
+        name: 'prison-affairs-public-social-education-add',
+        meta: { typeId: 6, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/6', permission: 'visit.social-education.add', breadcrumbName: '新增社会帮教' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+        component: helper.loadView('info-prison-affairs-public/add')
+      },
+      {
+        path: '/prison-affairs-public/prison-affairs-public/6/edit/:id',
+        name: 'prison-affairs-public-social-education-edit',
+        meta: { typeId: 6, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/6', breadcrumbName: '编辑社会帮教' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+        component: helper.loadView('info-prison-affairs-public/edit'),
+        children: [{
+          path: '/prison-affairs-public/prison-affairs-public/6/edit/:idasdasdasd',
+        name: 'prison-affairs-public-social-education-edit',
+        meta: { typeId: 6, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/6', permission: 'visit.social-education.update', breadcrumbName: '编辑社会帮教' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+        component: helper.loadView('info-prison-affairs-public/edit')
+        }, {
+          path: '/prison-affairs-public/prison-affairs-public/6/edit/:id',
+        name: 'prison-affairs-public-social-education-edit',
+        meta: { typeId: 6, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/6', permission: 'visit.social-education.test', breadcrumbName: '编辑社会帮教' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+        component: helper.loadView('info-prison-affairs-public/edit')
+        }, {
+          path: '/prison-affairs-public/prison-affairs-public/6/edit/:id',
+        name: 'prison-affairs-public-social-education-edit',
+        meta: { typeId: 6, deep: true, activeMenu: '/prison-affairs-public/prison-affairs-public/6', permission: 'visit.social-education.asdcadad', breadcrumbName: '编辑社会帮教' },
+        // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+        component: helper.loadView('info-prison-affairs-public/edit')
+        }]
+      }
+    ]
+  },
+  // {
+  //   path: '/prison-affairs-public/prison-affairs-public/add',
+  //   name: '新增狱务公开信息',
+  //   meta: { typeId: 1, deep: true, permission: '' },
+  //   component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+  // }, {
+  //   path: '/prison-affairs-public/prison-affairs-public/edit/:id',
+  //   name: '编辑狱务公开信息',
+  //   meta: { typeId: 1, deep: true, permission: '' },
+  //   component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+  // },
+  {
+    path: '/prison-affairs-public/working-dynamics',
+    name: 'prison-affairs-public-working-dynamics',
+    meta: { typeId: 2, permission: 'visit.work-trend.search', breadcrumbName: '工作动态' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/list'], resolve)
+    component: helper.loadView('info-prison-affairs-public/list')
+  }, {
+    path: '/prison-affairs-public/working-dynamics/add',
+    name: 'prison-affairs-public-working-dynamics-add',
+    meta: { typeId: 2, deep: true, activeMenu: '/prison-affairs-public/working-dynamics', permission: 'visit.work-trend.add', breadcrumbName: '新增工作动态' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+    component: helper.loadView('info-prison-affairs-public/add')
+  }, {
+    path: '/prison-affairs-public/working-dynamics/edit/:id',
+    name: 'prison-affairs-public-working-dynamics-edit',
+    meta: { typeId: 2, deep: true, activeMenu: '/prison-affairs-public/working-dynamics', permission: 'visit.work-trend.update', breadcrumbName: '编辑工作动态' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+    component: helper.loadView('info-prison-affairs-public/edit')
+  }, {
+    path: '/prison-affairs-public/complaints-suggestions',
+    name: 'prison-affairs-public-complaints-suggestions',
+    meta: { typeId: 3, permission: 'visit.complaint-suggestion.search', breadcrumbName: '投诉建议公示' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/list'], resolve)
+    component: helper.loadView('info-prison-affairs-public/list')
+  }, {
+    path: '/prison-affairs-public/complaints-suggestions/add',
+    name: 'prison-affairs-public-complaints-suggestions-add',
+    meta: { typeId: 3, deep: true, activeMenu: '/prison-affairs-public/complaints-suggestions', permission: 'visit.complaint-suggestion.add', breadcrumbName: '新增投诉/建议' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/add'], resolve)
+    component: helper.loadView('info-prison-affairs-public/add')
+  }, {
+    path: '/prison-affairs-public/complaints-suggestions/edit/:id',
+    name: 'prison-affairs-public-complaints-suggestions-edit',
+    meta: { typeId: 3, deep: true, activeMenu: '/prison-affairs-public/complaints-suggestions', permission: 'visit.complaint-suggestion.update', breadcrumbName: '编辑投诉/建议' },
+    // component: resolve => require(['@/views/info-prison-affairs-public/edit'], resolve)
+    component: helper.loadView('info-prison-affairs-public/edit')
+  }]
+}], testAAuth = ['visit.social-education.searc444h', 'visit.sentence-parole.search', 'visit.complaint-suggestion.update', 'visit.complaint-suggestion.add', 'visit.complaint-suggestion.search', 'visit.social-education.add', 'visit.social-education.update', 'visit.social-education.search', 'visit.execution-outside-of-prison.update']
+const getExactCurrentRouter = (currentRouter, ownRouterAuthorities) => {
+  console.log(ownRouterAuthorities)
+  currentRouter.map(router => {
+    if (router.children && router.children.length) return getExactCurrentChildrenRouter(router.children, ownRouterAuthorities)
+  })
+  return currentRouter
+}
+const getExactCurrentChildrenRouter = (routers, auth) => {
+  let temp = routers.map((router, index) => {
+    if (router.children && router.children.length) return getExactCurrentChildrenRouter(router.children, auth)
+    return !router.redirect && !(router.meta && router.meta.permission && auth.includes(router.meta.permission))
+  })
+  adaddaAd(temp, routers)
+  return !temp.includes(false)
+}
+function adaddaAd(a, b) {
+  a.map((val,index) => {
+    if(val) {
+      b.splice(index,1)
+      a.splice(index,1)
+      return adaddaAd(a, b)
+    }
+  })
+}
+console.log(getExactCurrentRouter(testA, testAAuth))
+  </script> 
+</body>
+</html>

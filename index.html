@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <div :data-cy="a" id="my"></div>
+  <script>
+    // function test(arr) {
+    //   let roles = [
+    //     { roleList: [0], role: 0 },
+    //     { roleList: [1], role: 1 },
+    //     { roleList: [3,5,6], role: 3 },
+    //     { roleList: [4], role: 4 },
+    //     { roleList: [1,3,4], role: 6 }
+    //   ],result = {},temp = true
+    //   for(let index in roles) {
+    //     console.log('first', index)
+    //     if(roles[index].roleList.length !== arr.length) {
+    //       temp = false
+    //       console.log(roles[index].roleList.length, arr.length)
+    //       continue
+    //     }
+    //     else {
+    //       temp = true
+    //       for (let value of roles[index].roleList) {            
+    //         console.log('second', value)
+    //         if (arr.some((item, index) => value === item)) {
+    //             continue
+    //           }
+    //         else {
+    //             console.log('out')
+    //             temp = false
+    //             break
+    //           }
+    //         }
+    //       }
+    //       if(temp) {
+    //           result = {role: roles[index].role}
+    //           break
+    //         }
+    //       else {
+    //         result ={role : -9999}
+    //       }
+    //     }
+    //     console.log(result,temp)
+    //   }
+    //   test([1,3,5])
+    //   function testReturn() {
+    //     let a =1 
+    //     a && a++
+    //   }
+    //   console.log(testReturn())
+    // 确实很多思想 很多优化 很重要 不做一个搬运工 要做一个creater
+    var isPrime=(function(){
+  var hash={};
+  return function(n){
+    console.log(hash)   
+    if(!isNaN(n)&&n>1){
+      if(n<=3) return true;
+      else if(n%2==0) return false;
+      else if(hash[n]!==undefined){
+        console.log("不用执行for循环...");
+        return hash[n];
+      }else{
+        console.log("执行for循环...");
+        for(var i=3;i<=Math.sqrt(n);i+=2){
+          if(n%i==0){
+            hash[n]=false;
+
+            return false;
+          }
+        }
+        hash[n]=true;
+        return true;
+      }
+    }else
+      throw new Error(
+        "必须输入>1的数字");    
+  }
+})();
+isPrime(117)
+isPrime(117)
+  </script>
+</body>
+</html>

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <script>
+    /* 
+     Vue Function-based API REF:
+     1:设计动机
+      逻辑组合与复用:组件API设计所面对的核心问题之一就是如何组织逻辑，以及如何在多个组件之间抽取利用复用逻辑
+      将相关联的代码抽取到一个'composition function'(组合函数)中 该函数封装了相关的逻辑
+      引入一个新的组件选项setup():我们组件逻辑的地方 它会在一个组件实例被创建时 初始化了props之后调用， setup() 会接收到初始化的props作为参数
+      组件状态：类似data(), setup() 可以返回一个对象 这个对象上的属性将会被暴露给模板的渲染上下文
+      包装对象：
+        原因：原始类型如string和number是只有值 没有引用的 这样是无法追踪原始变量后续的变化的。包装对象的意义就在于提供一个让我们能够在函数之间以引用的方式传递任意类型值得容器，并且这个包装对象同时还是响应式得数据源
+        有了这样的容器 我们就可以在封装了逻辑的组合函数中将状态以引用的方式传回给组件。组件负责展示(追踪依赖) 组合函数负责管理状态(触发更新)
+        包装对象也可以包装非原始值类型的数据 被包装的对象中嵌套的属性都会被响应地追踪。
+        勇包装对象去包装对象或是数组并不是没有意义的 它让我们可以对整个对象的值进行替换/如果你依然想创建一个没有包装的响应式对象 可以使用state API 和 2.x的Vue.observable()等同
+        Vue.observable(object):让一个对象可响应 Vue内部会用它来处理data函数返回的对象。返回的对象可以直接用于渲染函数和计算属性内 并且会在发生变化时触发响应的更新 也可以作为最小化的跨组件状态存储器
+     深入响应式原理: Vue最独特的特性之一 是其非侵入性的响应式系统。数据模型仅仅是普通的JavaScript对象，而当你修改它们时 视图会进行更新。这使得状态管理非常简单直接
+        如何追踪变化： 当你把一个普通的JavaScript对象传入Vue实例作为data选项, Vue将遍历此对象所有的属性 并使用Object.defineProperty 把这些属性全部转为getter/setter Object.defineProperty是ES5中一个无法shim的特性 这就是Vue不支持
+        IE8以及更低浏览器的原因
+        extension：
+          shim：在一个旧的环境中模拟出一个新的API 而且仅靠旧环境中已有的手段实现 以便所有的浏览器具有相同的行为
+          polyfill: 是一段代码(或者插件) 提供了那些开发者们希望浏览器原生提供支持的功能。程序库先检查浏览器是否支持某个API 如果不支持则加载对象的polyfill
+          shim的概念要比polyfill更大一些 可以将polyfill理解为专门兼容浏览器API的shim，简单的说 如果浏览器X支持标准规定的功能 那么polyfill可以让浏览器Y的行为与浏览器X一样
+     配合手写Render函数使用: 如果你的组件不是有模板  你也可以选择在setup()中直接返回一个渲染函数 
+     Computed Value：除了直接包装一个可变的值 我们也可以包装通过计算产生的值，计算值的行为跟计算属性一样，只有当依赖变化的时候它才会被重新计算， computed()返回的是一个只读的包装对象 它可以和普通的包装对象一样在setup()中被返回，也一样会在
+     渲染上下文中被自动展开 默认情况下 如果用户试图去修改一个只读包装对象 会触发警告
+     Watchers: watch() API提供了基于观察状态的变化来执行副作用的能力, watch()接收第一个参数被称作 "数据源"， 它可以是一个返回任意值的函数、一个包装对象、一个包含上述两种数据源的数组；第二个参数是回调函数 回调函数只有当数据源变化时才会被触发
+     观察props：setup() 接收到的props对象是一个可观测的响应式对象
+     观察包装对象:watch()可以直接观察一个包装对象
+     观察多个数据源:watch()也可以观察一个包含多个数据源的数组-这种情况下 任意一个数据源的变化都会触发回调 同时回调会接收到包含对应值的数组作为参数
+     停止观察: watch()返回一个停止的函数
+     清理副作用:有时候当观察的数据源变化后 我们可能需要对之前所执行的副作用进行清理， watcher的回调会接收到的第三个参数是一个用来注册清理操作的函数 调用这个函数可以注册一个清理函数
+      清理函数会在下属情况下被调用:
+        在回调被下一次调用前/在watcher被停止前
+     watcher 回调的调用时机:默认情况下 所有的watcher回调都会在当前的renderer flush之后被调用 这确保了在回调中DOM永远都已经被更新完毕 如果你想要让回调在DOM更新之前或是被同步触发 可以使用flush选项
+     全部的watch选项(TS类型声明)
+     生命周期:所有现有的生命周期钩子都会有相应的onxxx函数(只能在setup() 中使用)
+     依赖注入:provide/inject
+     类型推导:为了能够在TypeScript中提供正确的类型推导 我们需要通过一个函数来定义组件
+     纯TypeScript的props类型声明:3.0的props选项不是必须的 如果你不需要运行时的props类型检查 你也可以选择完全在TypeScript的类型层面声明props的类型
+     Required props: props默认都是可选的 也就是说它们的类型都可能时undefined 非可选的props需要声明required:true
+     复杂props类型:Vue提供的propType类型可以用来声明任意复杂度的props类型 但需要用 as any 进行一次强制类型转换
+     依赖注入类型:依赖注入的inject方法是唯一必须手动声明类型的API
+    */
+   import { value, computed, watch, onMounted, state, createElement as h, onUpdated, onUnMounted, provide, inject, createComponent, PropType, Value } from 'vue'
+   const App = {
+     template: `
+        <div>
+          <span>count is {{ count }}</span>
+          <span>plusOne is {{ plusOne }}</span>
+          <button @click="increment"> count++ </button>
+        </div>
+     `,
+     setup() {
+       const count = value(0)
+       const plusOne = computed(() => count.value + 1);
+       const increment = () => { count.value++ }
+       watch(() => count.value * 2, val => {
+         console.log(`count * 2 is ${val}`)
+       })
+       onMounted(() => {
+         console.log('mounted')
+       })
+       return {
+         count,
+         plusOne,
+         increment
+       }
+     }
+   }
+   function useMouse() {
+     const x = value(0)
+     const y = value(0)
+     const update = e => {
+       x.value = e.pageX
+       y.value = e.pageY
+     }
+     onMounted(() => {
+       window.addEventListener('mousemove', update)
+     })
+     onUnMounted(() => {
+       window.removeEventListener('mousemove', update)
+     })
+     return { x, y }
+   }
+   const Component = {
+     setup() {
+       const { x, y } = useMouse()
+       const { z } = useOtherLogic()
+       return { x, y, z }
+     },
+     template: `<div>{{ x }} {{ y }} {{ z }}</div>`
+   }
+   const myComponent = {
+     props: {
+       name: String
+     },
+     setup(props) {
+      //  需要留意的是这里传进来的props对象是响应式的 它可以被当作数据源去观测 当后续props发生变动时 它也会被框架内部同步更新 但对于用户代码来说 它时不可以修改的(会导致警告) 在setup内部可以使用this 但你大部分时候不会需要它
+      //  console.console(props.name)
+      // return {
+      //   msg: `hello ${props.name}!`
+      // }
+      // value()返回的是一个value wrapper(包装对象)。一个包装对象只有一个属性： value 该属性指向内部被包装的值，包装对象的值可以被直接修改
+      const msg = value('hello');
+      const appendName = () => {
+        msg.value = `hello ${props.name}`
+      }
+      return {
+        msg,
+        appendName
+      }
+     },
+     setup01() {
+     const valueA = useLogicA()
+     const valueB = useLogicB()
+     return {
+       valueA,
+       valueB
+     }
+   },
+    //  和data()一模一样 msg可以在模板做被直接使用 它可以被模板中的内联函数修改 但如果我们想要创建一个可以在setup()内部被管理的值 可以使用value函数
+    // 当包装对象被暴露给模板渲染上下文 或是被嵌套在另一个响应式对象得时候 它会被自动展开(unwrap)为内部得值 当一个包装对象被作为另一个响应式对象得属性引用得时候也会被自动展开
+    // 只有当你直接以变量得形式引用一个包装对象得时候才会需要用.value去取它内部的值
+     template: `<div @click="appendName">{{ msg }}</div>`
+   }
+   const object = state({
+     count: 0
+   })
+   object.count++
+   const state = Vue.observable({ count: 0 })
+   const Demo = {
+     render(h) {
+       return h('button', {
+         on: {
+           click: () => { state.count++ }
+         }
+       }, `count is ${ state.count }`)
+     }
+   }
+   const count = value(0)
+   const obj = state({
+     count
+   })
+   console.log(obj.count)
+   const MyComponent = {
+     setup(initialProps) {
+       const count = value(0)
+       const increment = () => count.value++
+      //  和2.x一样的render选项也可以使用 但如果用了 setup() 就应该尽量使用内联返回的渲染函数
+       return (props, slots, attrs, vnode) => (
+         h('button', {
+           on: {
+             click: increment
+           }
+         }, count.value)
+       )
+     }
+   }
+   const sxCount = value(0);
+  //  双向计算值可以通过传给computed第二个参数作为setter来创建
+   const writableComputed = computed(() => sxCount.value + 1, val => {
+    sxCount.value = val - 1;
+   })
+  //  和2.x的$watch有所不同的是 watch()的回调会在创建时就执行一次
+   watch(() => count.value + 1, (value, oldValue) => {
+     console.log('count + 1 is: ', value);
+   })
+   const cyTest = {
+     props: {
+       id: Number
+     },
+     setup(props) {
+       const data = value(null)
+       watch(() => props.id, async (id) => {
+         data.value = await fetchData(id);
+       })
+       return {
+         data
+       }
+     }
+   }
+   const double = computed(() => count.value * 2)
+   watch(double, value => {
+     console.log('double the count is: ', value)
+   })
+   watch([valueA, () => valueB.value], ([a, b], [prevA, prevB]) => {
+     console.log(`a is: ${a}`)
+     console.log(`b is: ${b}`)
+   })
+   const stop = watch()
+  //  stop watching
+  // 如果watch()是在一个组件的setup()或是生命周期函数中被调用的 那么该watcher会在当前组件被销毁时也一同被自动停止
+  stop()
+  watch(idValue, (id, oldId, onCleanup) => {
+    const token = performAsyncOperation(id)
+    onCleanup(() => {
+      // id 发生了变化 或是watcher即将被停止
+      // 取消还未完成的异步操作
+      // 之所以要传入的注册函数来注册清理函数 我们经常需要在watcher的回调中用async function来执行异步操作
+      token.cancel();
+    })
+  })
+  const data = value(null);
+  watch(getId, async (id) => {
+    data.value = await fetchData(id);
+  })
+  watch(() => count.value + 1, () => console.log('count changed'), {
+    flush: 'post', // defalut fire after renderer flush
+    flush: 'pre', // fire before renderer flush
+    flush: 'sync' // fire syncronously
+  })
+//   interface WatchOptions {
+//     lazy?: Boolean
+//     deep?: Boolean
+//     flush?: 'pre' | 'post' | 'sync'
+//     onTrack?: (e: DebuggerEvent) => void
+//     onTrigger?: (e: DebuggerEvent) => void
+//   }
+// OnTrack和onTrigger 是两个用于debug的钩子 分别在watcher追踪到依赖和依赖发生变化时候被调用 获得的参数是一个包含了依赖细节的debugger event
+//   interface DebuggerEvent {
+//   effect: ReactiveEffect
+//   target: any
+//   key: string | symbol | undefined
+//   type: 'set' | 'add' | 'delete' | 'clear' | 'get' | 'has' | 'iterate'
+// }
+const myTest = {
+  setup() {
+    onMounted(() => {
+      console.log('mounted!')
+    })
+    onUpdated(() => {
+      console.log('update!')
+    })
+    // destroyed调整为unmounted
+    onUnMounted(() => {
+      console.log('unmounted')
+    })
+  }
+}
+const countSymbol = Symbol()
+const Ancestor = {
+  setup() {
+    // providing a value can make it reactive
+    const count = value(0)
+    provide({
+      [countSymbol]: count
+    })
+  }
+}
+// 注:如果注入的是一个包装对象 则该注入绑定会是响应式的
+const Descendent = {
+  setup() {
+    const count = inject(countSymbol)
+    return {
+      count
+    }
+  }
+}
+const testComponent = createComponent({
+  // props declarations are used to infer prop types
+  props: {
+    msg: String
+  },
+  // createComponent 从概念上来说和2.x的Vue.extend是一样 但在3.0中它其实是单纯为了类型推导而存在的 它的返回类型可以用于TSX和Vetur的模板自动补全
+  // 如果你使用手写render函数或是TSX,你可以在setup()当中直接返回一个渲染函数(注意这里不需要任何手动的类型声明)
+  setup(props) {
+    props.msg // string | undefined
+    // bindings returned from setup() can be used for type inference in templates
+    const count = value(0)
+    return {
+      count
+    }
+  },
+  nextSetup(props) {
+    const count = value(0)
+    return () => h('div', [
+      h('p', `msg is ${props.msg}`),
+      h('p', `count is ${count.value}`)
+    ])
+  }
+})
+// interface Props {
+//   msg: String
+// }
+// const my = createComponent({
+//   setup(props: Props) {
+//     return () => h('div', props.msg)
+//   }
+// })
+// 如果不需要除了setup之外的选项 甚至可以直接传一个函数给createComponent
+// const yt = createComponent((props: { msg: String }) => {
+//   return () => h('div', props.msg)
+// })
+createComponent({
+  props: {
+    foo: {
+      type: String,
+      required: true
+    },
+    bar: {
+      type: String
+    }
+  } as const,
+  // as const TS3.4提供的一个功能 可以避免required:true这样的字面量在推导时被拓宽为boolean类型
+  setup(props) {
+    props.foo // string
+    props.bar // string | undefined
+  }
+})
+createComponent({
+  props: {
+    options: (null as any) as PropType<{msg: String}>
+  },
+  setup(props) {
+    props.options // {msg: string} | undefined
+  }
+})
+createComponent({
+  setup() {
+    // 这里的Value类型即是包装对象的类型 通过泛型参数来声明其内部包装的值的类型
+    const count: Value<Number> = inject(countSymbol)
+    return {
+      count
+    }
+  }
+})
+  </script>
+</body>
+</html>s

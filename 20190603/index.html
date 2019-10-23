@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="shortcut icon" href="https://csdnimg.cn/www/images/favicon.ico" type="image/x-icon">
+  <title>Document</title>
+</head>
+<body>
+  <script>
+    /**
+     * Object.assign:浅拷贝
+     * 数组的处理:Object.assign([],[]) 会把数组视为对象 然后返回数组类型
+     * 取值函数的处理：如果要复制的值是一个取值韩式 那么将求值后再复制
+     * Object.getOwnPropertyDescriptors():返回指定对象所有自身属性的描述对象/Object.getOwnPropertyDescriptor(obj, attr)
+     * 返回某个对象指定属性的描述对象/ Object.assign()无法拷贝它背后的赋值方法或取值方法 使用Object.defineProteries()和Object.getOwnProtertyDescriptors()
+     * 来正确拷贝/Object.getOwnPropertyDescriptors()可以实现一个对象继承另一个对象
+     * Object.create(proto, [propertiesObject]):proto：新创建对象的原型对象；propertiesObject:没指定就是undefined/这些属性对应Object.defineProperties()第二个参数
+     * Object.defineProperties(obj, props):方法直接在一个对象上定义新的属性或修改现有的属性，并返回该对象/props:对象中存在的属性描述符主要分为两种：数据描述符和访问器描述符
+     * 描述符具有以下键：configurable(false)/enumerable(false)/writable(false)/value(undefined)/get(undefined)/set(undefined)
+     * Object.getOwnPropertyDescriptors():返回指定对象所有自身属性(非继承属性)的描述对象
+    */
+   /*
+   let a = {a: 1,b: 2}, descript = Object.getOwnPropertyDescriptors(a);
+    console.log(Object(1), Object(true), Object('abc'));
+    console.log(Object.assign(2));
+    console.log(descript);
+    console.log(Object.assign([1,2,3],[4,5])) 
+    const soruce = {
+     get foo() {
+       return 1;
+     }
+   }
+   console.log(Object.assign({}, soruce));
+   const DEFAULTS = {
+     url: {
+       host: 'example.com',
+       port: 7070
+     }
+   }
+   function processContent(options) {
+     options = Object.assign({}, DEFAULTS, options);
+     console.log(options)
+   }
+   processContent({url:{port: 8000}})
+   const obj = {
+     foo: 123,
+     get bar() {
+       return 'abc';
+     }
+   }
+   console.log(Object.getOwnPropertyDescriptors(obj));
+   const source = {
+     set foo(value) {
+       console.log(value)
+     }
+   }, target = {};
+   Object.assign(target, source);
+   console.log(Object.getOwnPropertyDescriptor(target, 'foo'))
+   const soure = {
+     set foo(value) {
+       console.log(value);
+     }
+   },targets = {};
+   Object.defineProperties(targets, Object.getOwnPropertyDescriptors(soure));
+   console.log(Object.getOwnPropertyDescriptor(targets, 'foo'));
+   const obj = {
+      foo: 123,
+      get bar() {
+        return 'abc'
+      }
+    }
+    console.log(Object.getOwnPropertyDescriptors(obj));
+   Obejct.create(proto(新创建对象的原型对象), [propertiesObject()]):创建一个新对象，使用现有的对象来提供新创建的对象的_proto_
+   返回值 一个新对象 带着指定的原型对象和属性/如果propertiesObject参数是null或非原始包装对象 则抛出TypeError异常
+   返回一个新对象 带着指地原型对象和属性
+   _proto_/Object.setPrototypeOf()/Object.getPrototypeOf()：JavaScript的对象继承是通过原型链实现的
+   const person = {
+      isHuman: false,
+      printIntroduction() {
+        console.log(`My name is ${this.name}. Am I human? ${this.isHuman}`)
+      }
+    }, me = Object.create(person);
+    me.name = 'cy';
+    me.isHuman = true
+    me.printIntroduction()
+    console.log(Object.getOwnPropertyDescriptors(me)); 
+    function Shape() {
+    this.x = 0;
+    this.y = 0;
+  }
+  Shape.prototype.move = function(x, y) {
+    this.x += x;
+    this.y += y;
+    console.info('Shape moved');
+  }
+  function Rectangle() {
+    Shape.call(this); //call super constructor
+  }
+  Rectangle.prototype = Object.create(Shape.prototype);
+  Rectangle.prototype.constructor = Rectangle;
+  let rect = new Rectangle();
+  console.log('Is rect an instance of Rectangle?', rect instanceof Rectangle);
+  console.log('Is rect an instance of Shape?', rect instanceof Shape);
+  rect.move(1, 1);
+  let o;
+  o = Object.create(Object.prototype, {
+    foo: {
+      writable: true,
+      configurable: true,
+      value: 'hello'
+    },
+    bar: {
+      configurable: false,
+      get() {return 10},
+      set(value) {
+        console.log("Setting 'o.bar' to", value);
+      }
+    }
+  })
+  js对象的继承是通过原型链实现的.__proto__(前后各两个下划线)属性：用来读取或设置当前对象的prototype对象/无论是从语义的角度 还是兼容性的角度
+  都不要使用这个属性 而是使用下面的 Object.setPrototypeOf() Object.getPrototypeOf() Object.create()
+  __proto__调用的是Object.prototype.__proto__
+  Object.setPrototypeOf(object, prototype)用来设置一个对象的prototype对象 返回参数对象本身/可以读取原型对象上面的属性
+  let proto = {}, obj = { x: 10 };
+  Object.setPrototypeOf(obj, proto);
+  proto.y = 20;
+  proto.z = 40;
+  console.log(obj.y)
+  console.log(Object.setPrototypeOf(1, {}))
+  如果第一个参数不是对象 会自动转为对象 但是由于返回的还是第一个参数 所以这个操作不会产生任何效果/如果第一个参数是null或者undefined 则会报错
+  因为无法转为对象
+  Object.getPrototypeOf(obj):用来读取一个对象的原型对象\如果参数不是对象 会被自动转为对象/基本类型就是返回它的原始的包装类型
+  它的值放在[[primitiveValue]]里面/如果参数式null或undefined 则报错
+  注意：Object.getPrototypeOf(Object)：不是 Object.prototype/js中的Object 是构造函数；Object.getProtitypeOf(Object)是把Object
+  这一构造函数看作对象 返回的当然是函数对象的原型 也就是Function.prototype
+  Object.prototype是构造出来的对象的原型
+  console.log(Object.getPrototypeOf(3), Object.getPrototypeOf('foo'), Object.getPrototypeOf(false));
+   console.log(Object.getPrototypeOf(Object), Object.getPrototypeOf(Function), Function.prototype, Object.prototype);
+   Object.keys()/Object.values()/Object.entries()
+  let obj = { foo: 'bar', baz: 42 }
+  console.log(Object.keys(obj)); 一旦执行到return时 函数就执行完毕/如果没有return语句 函数执行完毕后也会返回结果 只是结果为undefined
+  js函数也是一个对象 函数名就是指向改函数的变量
+  let a = new Function('a','b','return a+b');
+  console.log(a(1,2))
+  function a(x) {
+     return -x;
+   }
+   console.log(a());
+   即使函数定义时候任何函数 还是可以拿到参数的值
+    function adv() {
+    if( arguments.length === 0 ) return 0;
+    let x =arguments[0];
+    return x >= 0 ? x : -x;
+  }
+  console.log(adv(), adv(10), adv(-10))
+  取值函数的处理 Object.assigin只能进行值得复制 如果要复制得值是一个取值函数 那么将求值后再复制
+    const source = {
+    get foo() { return 1 }
+  };
+  console.log(Object.assign({}, source));
+    class Point {
+    constructor(x, y) {
+      Object.assign(this, {x, y})
+    }
+  };
+  let a = new Point(1,2);
+  console.log(a);
+    const a = {
+    foo() { console.log('hello') },
+    name() { console.log('name') }
+  }
+  console.log(Object.assign({}, a));
+    const obj = {
+    a: {
+      name: 'cy',
+      age: 25
+    },
+    b: 'hello cy'
+  }, cloneObj = {};
+  Object.assign(cloneObj, obj);
+  console.log(cloneObj);
+  cloneObj.a.name = 'wcx';
+  console.log(cloneObj, obj);
+  保持继承链：
+    function clone(origin) {
+    let originProto = Object.getPrototypeOf(origin);
+    return Object.assign(Object.create(originProto), origin);
+  }
+  const obj = {
+    foo: 123,
+    get bar() { return 'abc' },
+    set bar(val) {
+      this.foo = val;
+    }
+  }, target = {};
+  Object.defineProperties(target, Object.getOwnPropertyDescriptors(obj));
+  console.log(target);
+  // console.log(Object.assign({}, obj));
+  // console.log(Object.getOwnPropertyDescriptors(obj));
+  浅拷贝：将对象属性克隆到一个新对象 Object.create() 配合 Object.getOwnPropertyDescriptors()
+  const shallowClone = obj => Object.create(
+    Object.getPrototypeOf(obj),
+    Object.getOwnPropertyDescriptors(obj) 
+    )
+    Object.getOwnPropertyDescriptors()可以实现一个对象继承另一个对象
+    __proto__属性/Object.setPrototypeOf()/Object.getPrototypeOf():读取或设置当前对象的prototype对象
+   console.log(Object.setPrototypeOf(1, {}));   console.log(Object.getPrototypeOf(1))
+   Object.getPrototypeOf():用于获取一个对象的原型对象/如果参数不是对象 会被自动转为对象/如果是null undefined 无法转为对象 就会报错
+  Object.keys/values/entries:返回一个数组 参数对象自身的(不含继承的) 所以可遍历属性的键名/键名/键值对数组
+  console.log(Object.keys({foo: 'cy', name: 'cu'}))
+  属性的遍历次序规则: 首先遍历所有数值键，按照数值升序排列/其次遍历所有字符串键 按照加入数据升序排序/最后遍历所有symbol键 按着加入得时间升序排列
+  Object.valuesh会过滤属性名为symbol值得属性/如果参数是一个字符串 会返回各个字符串组成得数组/由于boolean number的包装对象，都不会为实例添加非继承的属性
+  所有Object.values返回空数组
+  Object.entries 也会忽略symbol属性
+   const obj = {cy: '123',3: 'a',1: 'd', ms: 'asdasd' }
+  console.log(Object.values(obj));
+  console.log(Object.entries('foo'), Object.entries({foo: 'ddd', bar: 'adadasd'}));
+  Object.fromEntries():逆操作 将一个键值对数组转为对象
+  console.log(Object.fromEntries([
+   ['foo', 'cy'],
+   ['bar', 34]
+ ]))
+ let a = Symbol('foo'), b = Symbol('bar');
+ console.log(a, b, a.toString(), b.toString());
+ let a = 0b111;
+   let a = 'abc', b = [1,3,4],c = {foo: 'adad'}, d = 123, f = true;
+  console.log(Object.prototype.toString.call(f));
+ console.log(a.toString());
+ Object.fromEntries()(entries逆操作):将键值对数组转为对象
+ symbol：ES5的对象属性名都是字符串，这容易造成属性名的冲突/防止属性名的冲突/一种新的原始数据类型Symbol：表示独一无二的值
+ symbol通过symbol函数生产/对象的 属性名现在可以有两种类型：一种是原来就有的字符串/另一种是新增的Symbol类型/凡是属性名属性Symbol类型
+ 就是独一无二的 可以保证不会与其他属性名产生冲突/注 symbol函数前不能使用new命令 否则会报错
+ Symbol函数可以接受一个字符串作为参数，表示对Symbol实例的描述 主要是为了在控制台显示或者转为字符串时 比较容易区分
+ 如果参数是一个对象 会先调用改对象的toString()方法
+ Object.property.toString():表示该对象的字符串
+ let a = { foo: 123 };
+console.log(a.toString());
+Symbol:保证每个属性的名字都是独一无二的， 原始数据类型，表示独一无二的值 Symbol函数生成/字符串作为参数 表示对Symbol实例的描述
+如果Symbol的参事是一个对象 就会调用该对象的toString()方法。将其转化为字符串，然后再生成一个Symbol值/Symbol值是独一无二的 不和除自身之外的任何Symbol相等，不与其他类型的值
+进行运算，会报错/Symbol值可以显示转为字符串, 可以转为布尔值，但是不能转为数值
+Symbol.prototype.description
+let s1 = Symbol('foo')
+console.log(s1.toString(), Boolean(s1), s1.description)
+Symbol作为对象属性名时 不能用点运算符 必须放在方括号中
+const mySymbol = Symbol()
+const a = {}
+a.mySymbol = 'Hello'
+console.log(a['mySymbol'], a[mySymbol])
+Symbol类型还可以用于定义一组常量，保证这组常量的值都是不相等的
+const log = {}
+log.levels = {
+  DEBUG: Symbol('debug'),
+  INFO: Symbol('info'),
+  WARN: Symbol('warn')
+}
+魔术字符串指的是 在代码之中多次出现 与代码形成强耦合性的某一个具体的字符串或者数值
+常见的消除魔术字符串的方法 就是把它写成一个变量
+const shapeType = {
+  triangle: 'Triangle'
+}
+function getArea(shape, options) {
+  let area = 0;
+  switch(shape) {
+    case shapeType.triangle:
+      area = .5 * options.width * options.height;
+      break;
+  }
+  return area;
+}
+console.log(getArea(shapeType.triangle, {width: 20, height: 100}))
+Symbol作为属性名，该属性不会出现在for...in for...of 也不会被Object.keys()、Object.getOwnPropertyNames()、JSON.stringify()返回
+但是会通过Object.getOwnPropertySymbols方法(返回一个数组，成员是当前对象的所有用作属性名的 Symbol 值。) 可以获取指定对象的所有Symbol属性名，
+ const obj = {};
+ let a = Symbol('a'), b = Symbol('b')
+ obj[a] = 'Hello';
+ obj[b] = 'World';
+ const objectSymbols = Object.getOwnPropertySymbols(obj);
+ console.log(objectSymbols)
+ Reflect.ownKeys()返回所有类型的键名 包括常规键名Symbol键名
+ let obj = {
+   [Symbol('my_key')]: 1,
+   enmu: 2,
+   nonEnum: 3
+ }
+ console.log(Reflect.ownKeys(obj))
+ Symbol值作为名称的属性 不会被常规方法遍历得到 所有就可以造成一种非私有的内部方法的效果
+  let size = Symbol('size')
+ class Collection {
+   constructor() {
+     this[size] = 0;
+   }
+   add(item) {
+     this[this[size]] = item;
+     this[size] ++;
+   }
+   static sizeOf(instance) {
+     return instance[size]
+   }
+ }
+ let x = new Collection()
+ console.log(Collection.sizeOf(x))
+ x.add('foo')
+ console.log(Collection.sizeOf(x))
+ Symbol.for(重新使用同一个Symbol值，接受一个字符串作为参数,会被登记在全局环境中供搜索) Symbol.keyFor(返回一个已登记的Symbol类型值的key,未登记的Symbol值 返回undefined)
+ let s1 = Symbol.for('foo'), s2 = Symbol.for('foo')
+console.log( s1 === s2 )
+let s1 = Symbol.for('foo'), s2 = Symbol('foo')
+console.log(Symbol.keyFor(s1), Symbol.keyFor(s2))
+模块的Singleton模式：指的是调用一个类，任何时候返回的都是同一个实例
+内置的Symbol值，指向语言内部使用的方法 instanceof/内部方法
+foo instanceof Foo 实际调用的是 Foo[Symbol.hasInstance](foo)
+Symbol.hasInstance
+ class MyClass {
+   [Symbol.hasInstance](foo) {
+     return foo instanceof Array
+   }
+ }
+ console.log([1,2,3] instanceof new MyClass())
+ class Even {
+   static [Symbol.hasInstance](obj) {
+     return Number(obj) % 2 ===0;
+   }
+ }
+ console.log(1 instanceof Even, 2 instanceof Even, 12345 instanceof Even)
+Symbol.isConcatSpreadable属性等于一个布尔值，表示该对象用于Array.prototype.concat()时，是否可以展开
+数组的默认行为是可以展开，Symbol.isConcatSpreadable默认等于undefined。该属性为true时， 也有展开的效果
+类似数组的对象，默认不展开，它的Symbol.isConcatSpreadable属性设为true 才可以展开
+let arr1 = ['c', 'd'], arr2 = ['c', 'd'], obj = {0: 'c', 1: 'd',length:2}
+arr2[Symbol.isConcatSpreadable] = false
+obj[Symbol.isConcatSpreadable] = true
+console.log(['a', 'b'].concat(arr1, 'e'), arr1[Symbol.isConcatSpreadable], ['a', 'b'].concat(arr2, 'e'), ['a', 'b'].concat(obj, 'e'))
+ class A1 extends Array {
+  constructor(args) {
+    super(args);
+    this[Symbol.isConcatSpreadable] = true
+  }
+}
+class A2 extends Array {
+  constructor(args) {
+    super(args);
+  }
+  get[Symbol.isConcatSpreadable]() {
+    return false;
+  }
+}
+let a1 = new A1(), a2 = new A2();
+a1[0] = 3;
+a1[1] = 4;
+a2[0] = 5;
+a2[1] = 6;
+console.log([1, 2].concat(a1).concat(a2))
+Symbol.species属性指向一个构造函数。创造衍生对象时 会使用该属性
+创建衍生对象时就会使用这个属性返回的函数，作为构造函数，定义Symbol.species属性要采用get取值器
+class MyArray extends Array {
+  static get [Symbol.species]() { return Array } 
+  // 默认的Symbol.species是下面这种写法
+  // static get [Symbol.species] () { return this }
+}
+const a = new MyArray(1, 2, 3);
+const b = a.map(x => x);
+// const c = a.filter(x => x > 1);
+// b和c是a的衍生对象，也是MyArray的实例
+console.log(b instanceof MyArray, b instanceof Array)
+class T1 extends Promise {}
+class T2 extends Promise {
+  static get [Symbol.species] () {
+    return Promise;
+  }
+}
+console.log(new T1(r => r()).then(v => v) instanceof T1, new T2(r => r()).then(v => v) instanceof T2)
+Symbol.match属性指向一个函数，当执行str.match(myObject)时，如果该属性存在，就调用它，返回该方法的返回值
+String.prototype.match(regexp) === regexp[Symbol.match](this)
+class MyMatcher {
+  [Symbol.match] (string) {
+    return 'hello world'.indexOf(string);
+  }
+}
+console.log('e'.match(new MyMatcher()));
+Symbol.replace属性指向一个方法，当该对象被String.prototype.replace方法调用时 返回该方法的返回值
+Symbol.replace方法接收到两个参数，第一个参数时replace方法正在作用的对象，第一个参数时替换后的值
+const x = {};
+x[Symbol.replace] = (...s) => console.log(s)
+'Hello'.replace(x, 'world'); 
+Symbol.search属性指向一个方法 当该对象被String.prototype.search方法调用时，会返回该方法的返回值
+class MySearch {
+  constructor(value) {
+    this.value = value;
+  }
+  [Symbol.search] (string) {
+    return string.indexOf(this.value)
+  }
+}
+console.log('foobar'.search(new MySearch('foo')))
+Symbol.split()属性，指向一个方法，当该对象被String.prototype.split方法调用时，会返回该方法的返回值。
+class MySplitter {
+  constructor(val) {
+    this.value = val;
+  }
+  [Symbol.split] (string) {
+    let index = string.indexOf(this.value);
+    if(index === -1) {
+      return string;
+    }
+    return [string.substr(0, index), string.substr(index+this.value.length)]
+  }
+}
+console.log('foobar'.split(new MySplitter('foo')), 'foobar'.split(new MySplitter('bar')), 'foobar'.split(new MySplitter('baz')))
+Symbol.toPrimitive属性指向一个方法。该对象被转为原始类型的值时 会调用这个方法，返回该对象对应的原始类型值
+Symbol.toPrimitive被调用时，会接受一个字符串参数，表示当前运算模式，一共有三种模式：Number：该场合需要转化为数值
+String:该场合需要转成字符串；Default：该场合可以转为数值 也可以转为字符串
+let obj = {
+  [Symbol.toPrimitive] (hint) {
+    switch(hint) {
+      case 'number': 
+        return 123;
+      case 'string':
+        return 'str';
+      case 'default':
+        return 'default';
+      default:
+        throw new Error();      
+    }
+  }
+}
+console.log(2 * obj, 3 + obj, obj == 'default', String(obj))
+Symbol.toStringTag属性指向一个方法，在该对象上面调用Object.prototype.toString方法时。如果该属性存在
+它的返回值会出现在toString方法返回的字符串之中，表示对象的类型 也就是说这个属性可以来定制[object, xxx]后面的那个字符串
+class Collection {
+  get [Symbol.toStringTag]() {
+    return 'xxx'
+  }
+}
+let x = new Collection()
+console.log(Object.prototype.toString.call(x))
+Symbol.unscopables属性指向一个对象。该对象指定了使用with关键字时，哪些属性会被with环境排除
+with语句扩展了一个语句的作用域链，方便用来引用某个对象中已有的属性，但是不能用来给对象添加属性
+要给对象创建新的属性 必须明确的引用该对象
+console.log(Array.prototype[Symbol.unscopables])
+class MyClass {
+  foo() { console.log(1); }
+}
+var foo = function () { return 2; };
+with(MyClass.prototype) {
+  foo();
+}
+class MyClasses {
+  foo() {console.log(111)}
+  get [Symbol.unscopables]() {
+    return { foo: true }
+  }
+}
+let foo = function() {console.log(2222)}
+with(MyClasses.prototype) {
+  foo()
+}
+通过指定Symbol.unscopables属性，使得with语法块不会在当前作用域寻找foo属性，即将指向外层作用域的变量
+*/
+</script>
+</body>
+</html>

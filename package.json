@@ -5,6 +5,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "bin": {
+    "test-bin": "./20190603/new-object.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/cyxuan0926/cy-study.git"
@@ -17,5 +20,16 @@
   "bugs": {
     "url": "https://github.com/cyxuan0926/cy-study/issues"
   },
-  "homepage": "https://github.com/cyxuan0926/cy-study#readme"
+  "homepage": "https://github.com/cyxuan0926/cy-study#readme",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "commander": "^2.20.0"
+  },
+  "dependencies": {
+    "co": "^4.6.0",
+    "g": "^2.0.1",
+    "lodash": "^4.17.15",
+    "thunkify": "^2.1.2"
+  }
 }

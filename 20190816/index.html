@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>函数式编程</title>
+</head>
+<body>
+  <script>
+    /* 
+    函数的第一条原则是要小 第二条原则是要更小
+    函数式编程是一种范式 我们能够以此创建仅依赖输入就可以完成自身逻辑的函数， 保证了当函数被多次调用时仍然返回相同的结果。函数不会改变任何外部环境的变量 这将产生可缓存、可测试的代码库
+    函数是一段可以通过其名称被调用的代码 它可以传递参数并返回值
+    方法是一段必须通过其名称和其关联对象的名称被调用的代码
+    */
+   let fillPre = (val) => {
+  return `00${ val }`.slice(-2)
+}
+    function Datesad(time, format) {
+
+    if (!time) return ''
+    else if (time < 0) return ''
+    let date = new Date(time),
+      year = date.getFullYear(),
+      month = fillPre(date.getMonth() + 1),
+      day = fillPre(date.getDate()),
+      hour = fillPre(date.getHours()),
+      minute = fillPre(date.getMinutes()),
+      second = fillPre(date.getSeconds())
+    return `${ year }${ month }${ day }${ hour }${ minute }${ second }`
+  }
+  console.log(Datesad(Date.now()))
+  function dateFormat(date,format) {
+var o = {
+"M+" : date.getMonth()+1, //month
+"d+" : date.getDate(),    //day
+"h+" : date.getHours(),   //hour
+"m+" : date.getMinutes(), //minute
+"s+" : date.getSeconds(), //second
+}
+if(/(y+)/.test(format)) {
+  console.log(11,format, RegExp.$1,(date.getFullYear()+""))
+  // format=format.replace(RegExp.$1,(date.getFullYear()+""))
+}
+for(var k in o)if(new RegExp("("+ k +")").test(format))
+// console.log(o[k], RegExp.$1)
+format = format.replace(RegExp.$1,
+RegExp.$1.length==1? o[k] :
+("00"+ o[k]).substr((""+ o[k]).length));
+return format;
+}
+console.log(dateFormat(new Date(Date.now()), 'y-M-y h:m:ss'))
+  </script>
+</body>
+</html>

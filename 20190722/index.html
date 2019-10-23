@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <div id="myDiv"></div>
+  <script>
+    /* 
+    Set和Map数据结构：
+    ES6提供了新的数据结构Set 它类似于数组，但是成员的值都是唯一的，没用重复的值，Set本身是一个构造函数
+    用来生成Set数据结构 Set函数可以接受一个数组(或者具有iterable接口的其他数据结构)作为参数，用来初始化
+    const set = new Set([1,2,3,4,4])
+   console.log([...set])
+    去除数组重复成员的方法
+    console.log([...new Set([array])])
+    console.log([...new Set('ababbc')].join(''))
+    向Set加入值得时候 不会发生类型转换，所有5和'5'是两个不同得值，set内部判断两个值是否不同，
+    使用得算法叫做'Same-value-zero equality' 它类似于(===)精确相等运算符 主要区别是向Set加入
+    值时认为NaN等于自身，而===运算符认为NaN不等于自身
+    let set = new Set(), a = NaN, b = NaN;
+    set.add(a);
+    set.add(b);
+    console.log(set)
+    另外，两个对象总是不相等的,所有它们被视为两个值
+    let set = new Set()
+    set.add({})
+    console.log(set.size)
+    set.add({})
+    console.log(set.size)
+    Set实例的属性和方法
+    实例属性：
+    Set.prototype.constructor：构造函数，默认就是Set函数
+    Set.prototype.size:返回Set实例的成员总数
+    实例的方法：操作方法(用于操作数据) 和 遍历方法(用于遍历成员)
+    Set.prototype.add(value):添加某个值 返回Set结构本身
+    Set.prototype.delete(value):删除某个值，返回一个布尔值，表示删除是否成功
+    Set.prototype.has(value):返回一个布尔值，表示该值是否为Set的成员
+    Set.prototype.clear():清除所有成员 没用返回值
+    let s = new Set();
+    console.log(s.add(1).add(2).add(2), s.size, s.has(1), s.has(2), s.has(3), s.delete(2), s.has(2))
+    Array.from():可以将Set结构转为数组
+    function dedupe(array) {
+     return Array.from(new Set(array))
+    }
+    console.log(dedupe([1,1,2,3]))
+    遍历操作:可以用于遍历成员
+    Set.prototype.keys():返回键名的遍历器
+    Set.prototype.values():返回键值的遍历器
+    Set.prototype.entries():返回键值对的遍历器
+    Set.prototype.forEach():使用回调函数遍历每个成员
+    注：Set的遍历顺序就是插入顺序/由于Set结构没用键名(或者说键名和键值是同一个值)，所有keys和values方法的
+    行为完全一致
+    let set = new Set(['red', 'green', 'blue'])
+   for(let item of set.keys()) {
+     console.log(item)
+   }
+   for(let item of set.values()) {
+     console.log(item)
+   }
+   for(let item of set.entries()) {
+     console.log(item)
+   }
+   Set结构的实例默认可遍历，它的默认遍历器生成函数就是它的values方法
+   Set.prototype[Symbol.iterable] === Set.prototype.values
+   这意味着 可以省略values方法 直接用for...of循环遍历Set
+   for(let item of set) {
+      console.log(item)
+    }
+    forEach((currentValue,currentKey,当前对象),this(表示绑定处理函数内部的this对象)):和数组一样，用于对每个成员执行某种操作 没用返回值
+    let set = new Set([1,4,9])
+    set.forEach(function(val, key, name) {console.log(name, this)}, {foo: 'cy'})
+    扩展运算符(...)内部使用for...of循环 所有也可以使用Set结构
+    let set = new Set([1,2,3])
+    set = new Set([...set].map(x => x * 2))
+    console.log(set)
+    并集/交集/差集
+    let a = new Set([1,2,3]), b = new Set([4,3,2])
+    // 并集/交集/差集
+    let union = new Set([...a, ...b]), intersect = new Set([...a].filter(x => b.has(x))), difference = new Set([...a].filter(x => !b.has(x)))
+    console.log(union, intersect, difference)
+    WeakSet结构：与Set结构类似 也是不重复的值的集合 但是 它与Set有两个区别
+    WeakSet的成员只能是对象，而不能是其他类型的值/其次 WeakSet中的对象都是弱引用，即垃圾回收机制不考虑WeakSet
+    对该对象的引用，也就是说 如果其他对象都不再引用该对象 那么垃圾回收机制会自动回收该对象所占用的内存，不考虑
+    对象还存在于WeakSet之中
+    这是因为垃圾回收机制依赖引用计数，如果一个值的引用次数不为0，垃圾回收机制就不会释放这块内存，结束使用该值之后
+    有时会忘记取消引用，导致内存无法释放，进而可能会引发内存泄漏。WeakSet里面的引用 都不计入垃圾回收机制
+    所以WeakSet的成员是不适合引用的，因为它会随时消失，WeakSet是不可遍历的
+    WeakSet是一个构造函数 可以使用new 创建WeakSet数据结构, 可以接受一个数组或类似数组的对象作为参数
+    实际上 任何具有Iterable接口的对象 都可以作为WeakSet的参数。该数组的所有成员 都会自动成为WeakSet实例
+    对象的成员/意味着数组的成员只能是对象 注：数组是特殊的对象
+    const ws = new WeakSet([[1,2], [3,4]])
+    console.log(ws)
+    WeakSet结构有以下三个方法:
+    WeakSet.prototype.add(value)：向WeakSet实例添加一个新成员
+    WeakSet.prototype.delete(value)：清除WeakSet实例指定的成员
+    WeakSet.prototype.has(value):返回一个布尔值 表示某个值是否在WeakSet实例之中
+    let ws = new WeakSet(), obj = {}, foo = {};
+    ws.add(window);
+    ws.add(obj);
+    console.log(ws.has(window), ws.has(foo))
+    ws.delete(window)
+    console.log(ws.has(window))
+    WeakSet没用size属性，没有办法遍历它的成员
+    WeakSet的一个用处 是存储DOM节点 而不用担心这些节点从文档移除时 会引发内存泄漏
+    const foos = new WeakSet();
+    class Foo {
+      constructor() {
+        foos.add(this)
+      }
+      method() {
+        if(!foos.has(this)) {
+          throw new TypeError('Foo.prototype.method 只能在Foo的实例上调用！')
+        }
+      }
+    }
+    Map数据结构：js的对象(Object) 本质上时键值对的集合(hash结构)，但是传统上只能用字符串当作键
+    由于对象只接受字符串作为键名 所有el被自动转为字符串[object HTMLDivElement]
+    const data = {}
+     const el = document.getElementById('myDiv')
+     data[el] = 'metadata'
+     console.log(data, data['[object HTMLDivElement]'])
+     Map数据结构 它类似于对象，也是键值对的集合，但是'键'的范围不限于字符串，各种类型的值(包括对象)都可以当作键
+     Object结构提供了"字符串-值"的对应 Map结构提供了"值-值"的对应，是一种更完善的Hash结构实现，键值对的数据结构
+     Map比Object更合适
+     const m = new Map();
+     const o = {p: 'Hello World'};
+     m.set(o, 'content')
+     console.log(m.get(o))
+     Map作为构造函数 也可以接受一个数组作为参数，该数组的成员是一个个表示键值对的数组
+     实质上是任何具有Interable接口 且每个成员都是一个双元素的数组的数据结构都可以当作Map构造函数的参数
+     const map = new Map([
+       ['name', '张三'],
+       ['title', 'Author']
+     ]);
+     console.log(map.size, map)
+     ===
+     items = [
+       ['name', '张三'],
+       ['title', 'Author']
+     ]
+     items.forEach(([key, value]) => map.set(key, value))
+     const set = new Set([
+      ['foo', 1],
+      ['bar', 2]
+    ])
+    const m1 = new Map(set)
+    const m2 = new Map([['baz',3]])
+    const m3 = new Map(m2)
+    console.log(m1, m2, m3)
+    分别使用Set对象和Map对象 作为Map结构函数的参数 结果都生成了新的Map对象
+    对同一个键多次赋值 后面的值将覆盖前面的值
+    如果读取一个未知的键 则返回undefined
+    const map = new Map();
+    map.set(1, 'aaa').set(1, 'bbb')
+    console.log(map.get(1))
+    console.log(new Map().get('dadad'))
+    注意 只有对同一个对象的引用，Map结构才将其视为同一个键
+    const map = new Map()
+    map.set(['a'], 555)
+    console.log(map.get(['a']))
+    同理 同样的值的两个实例 在Map结构中被视为两个键
+    function ts() {
+      let fillPre = (val) => {
+  return `00${ val }`.slice(-2)
+}, date = new Date(),
+      year = date.getFullYear(),
+      month = fillPre(date.getMonth() + 1),
+      day = fillPre(date.getDate()),
+      hour = fillPre(date.getHours()),
+      minute = fillPre(date.getMinutes()),
+      second = fillPre(date.getSeconds())
+      return `${ year }${ month }${ day }${ hour }${ minute }${ second }`
+    }
+    console.log(ts())
+    不仅仅是数组 任何具有Iterable接口 且每个成员都是一个双元素的数组的数据结构都可以当作Map构造函数的参数
+    如果读取一个未知的键 则返回undefined/只有对同一个对象的引用 Map结构才将其视为同一个键
+    const map = new Map();
+    map.set(['a'], 555)
+    console.log(map, map.get(['a']))
+    同理同样的值的两个实例 在Map结构中被视为两个键
+    const map = new Map();
+    const k1 = ['a']
+    const k2 = ['a']
+    map.set(k1, 111).set(k2, 222)
+    console.log(map)
+    Map的键实际上是跟内存地址绑定的，只要内存地址不一样 就视为两个键，这就解决了同名属性碰撞(clash)的问题
+    如果Map的键是一个简单类型的值(数字、字符串、布尔值) 则只要两个值严格相等，Map将其视为一个键 注 虽然NaN不严格
+    相等于自身，但是Map将其视为同一个键
+    let map = new Map()
+    map.set(-0, 123).set(NaN, 12333)
+    console.log(map.get(+0), map.get(NaN))
+    实例的属性和操作方法：
+    size的属性：返回Map结构的成员总数
+    Map.prototype.set(key, value):set方法设置键名key对应的键值为value，然后返回整个Map结构。如果key已经有值，则
+    键值会被更新，否则就新生产该键，set方法返回的是当前的Map对象，因此可以采用链式写法
+    Map.prototype.get(key):get方法读取key对应的键值，如果找不到key 返回undefined
+    Map.prototype.has(key):返回一个布尔值，表示某个键是否在当前Map对象之中
+    Map.prototype.delete(key):返回一个布尔值，表示是否删除key键成功
+    Map.prototype.clear():清除所有成员 没有返回值
+    遍历方法：
+    Map.prototype.keys():返回键名的遍历器
+    Map.prototype.values():返回键值的遍历器
+    Map.prototype.entries():返回所有成员的遍历器
+    Map.prototype.forEach():遍历Map的所有成员
+    注 Map的遍历顺序就是插入顺序
+    const map = new Map([
+      ['F', 'no'],
+      ['T', 'yes']
+    ])
+    for(let key of map.keys()) {
+      console.log(key)
+    }
+    for(let val of map.values()) {
+      console.log(val)
+    }
+    for(let item of map.entries()) {
+      console.log(item)
+    } 
+    注：Map结构的默认遍历器接口(Symbol.iterable === Map.prototype.entries)
+    Map结构转为数组结构 比较快速的方法是使用扩展运算符(...)
+    const map = new Map([
+      [1, 'one'],
+      [2, 'two'],
+      [3, 'three']
+    ])
+    console.log([...map])
+    const map0 = new Map().set(1, 'a').set(2, 'b').set(3, 'c')
+    const map1 = new Map([...map0].filter(([k,v]) => k < 3))
+    const map2 = new Map([...map0].map(([k, v]) => [k*2, '_' + v]))
+    console.log(map1, map2)
+    与其他数据结构的相互转换：
+    Map转为数组: ...运算符
+    数组转Map：将数组传入Map构造函数
+    Map转为对象：如果所有Map的键都是字符串 它可以无损地转为对象，如果有非字符串地键名，那么这个键名会被转为字符串，再
+    作为对象的键名
+    function strMapToObj(strMap) {
+      let obj = Object.create(null);
+      for(let [k, v] of obj) {
+        obj[k] = v
+      }
+      return obj
+    }
+    对象转为Map:
+    function objToStrMap(obj) {
+      let strMap = new Map();
+      for(let k of Object.keys(obj)) {
+        strMap.set(k, obj[k]);
+      }
+      return strMap;
+    }
+    Map转为JSON:
+    一：Map的键名都是字符串，先把Map转为对象 再转为JSON
+    function strMapToObj(strMap) {
+      let obj = Object.create(null);
+      for(let [k, v] of strMap) {
+        obj[k] = v
+      }
+      return obj
+    }
+    function strMapToJson(strMap) {
+      return JSON.stringify(strMapToObj(strMap))
+    }
+    let myMap = new Map().set('yes', true).set('no', false)
+    console.log(strMapToJson(myMap))
+    二：Map的键名有非字符串 这时可以选择转为数组JSON
+    function mapToArrayJson(map) {
+      return JSON.stringify([...map])
+    }
+    let myMap = new Map().set(true, 7).set({foo: 3}, ['abc'])
+    console.log(mapToArrayJson(myMap))
+    JSON转为Map：
+    正常情况下 所有键名都是字符串
+    function jsonToStrMap(jsonStr) {
+      return objToStrMap(JSON.parse(jsonStr))
+    }
+    整个JSON就是一个数组，且每个数组成员本身，又是一个有两个成员的数组 这时，它可以一一对应地转为 Map。
+    这往往是 Map 转为数组 JSON 的逆操作
+    function jsonToMap(jsonStr) {
+      return new Map(JSON.parse(jsonStr))
+    }
+    WeakMap:与Map结构类似，也是用于生成键值对的集合 区别：WeakMap只接受对象作为键名(null除外)，不接受其他
+    类型的值作为键名；其次WeakMap的键名所指向的对象 不计入垃圾回收机制
+    一旦不再需要这两个对象，我们就必须手动删除这个引用 否则垃圾回收机制不会释放e1和e2占用的内存
+    const e1 = {}
+    const e2 = {}
+    const arr = [
+      [e1, '第一个对象'],
+      [e2, '第二个对象']
+    ]
+    arr[0] = null
+    arr[1] = null
+    总体还是内存泄漏的问题
+    注 WeakMap弱引用的只是键名 而不是键值 键值依然是正常引用
+    const wm = new WeakMap()
+    let key = {}, obj = { foo: 1 }
+    wm.set(key, obj)
+    console.log(wm, obj)
+    obj = { name: 'cy' }
+    console.log(wm, obj)
+    即在WeakMap外部取消了obj的引用 WeakMap内部的引用依然存在 没有释放掉对应的内存
+    WeakMap的语法：没有遍历操作/没有size属性 没有clear()方法 无法清除
+    */
+    
+  </script> 
+</body>
+</html>

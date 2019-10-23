@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <script>
+    /* 
+      Iterator 和 for...of循环
+      Iterator(遍历器)：它是一种接口，为各种不同的数据结构提供统一的访问机制，任何数据结构只要部署Iterator接口 就可以完成遍历操作(即依次处理该数据结构的所有成员)
+      作用：1.为各种数据结构 提供一个统一的、简便的访问接口；2.使得数据结构的成员能够按某种次序排列3.主要供for...of消费
+      机制：创建一个指针对象 指向当前数据结构的起始位置，遍历器对象本质上就是一个指针对象；然后调用指针对象的next方法，返回数据结构的当前成员的信息
+      返回一个包含value和done两个属性的对象 value表示当前成员的值 done表示遍历是否结束
+      let it = makeIterator(['a', 'b']);
+      function makeIterator(array) {
+      let nextIndex = 0;
+      return {
+        next() {
+          return nextIndex < array.length ? { value: array[nextIndex++], done: false } : { value: undefined, done: true }
+        }
+      }
+    }
+    console.log(it.next(),it.next(), it.next())
+    默认Iterator接口：就是为所有数据结构 提供了一种统一的访问机制。当使用for....of循环遍历某种数据结构时 该循环会自动去寻找Iterator接口
+    一种数据结构只要部署了Iterator接口 我们就称这种数据结构是'可遍历的'
+    ES6规定 默认的Iterator接口部署在数据结构的Symbol.interator属性，此属性本身是一个函数，就是当前数据结构默认的遍历器生产函数
+    执行这个函数 就会返回一个遍历器
+    const obj = {
+      [Symbol.iterator]() {
+        return {
+          next() {
+            return { value: 1, done: true }
+          }
+        }
+      }
+    }
+    返回一个遍历器对象
+    原生具有Iterator接口的数据结构：Array Map Set String TypedArray arguments NodeList对象
+    let arr = ['a', 'b', 'c'],iter = arr[Symbol.iterator]();
+    console.log(iter.next())
+    对象(Object)之所以没有默认部署Iterator接口 是因为对象的哪个属性先遍历 哪个属性后遍历是不确定的，需要开发者手动指定
+    遍历器是一种线性处理
+    class RangeIterator {
+      constructor(start, stop) {
+        this.value = start;
+        this.stop = stop;
+      }
+      [Symbol.iterator]() { return this }
+       next() {
+         let value = this.value;
+         if (value < this.stop) {
+           this.value++;
+           return { done: false, value: value }
+         }
+         return { done: true, value: undefined }
+       }
+    }
+    function range(start, stop) {
+      return new RangeIterator(start, stop);
+    }
+    for(let value of range(0, 3)){
+      console.log(value)
+    }
+    下面是通过遍历器实现指针结构的例子
+    function Obj(value) {
+      this.value = value;
+      this.next = null;
+    }
+    Obj.prototype[Symbol.iterator] = function() {
+      let iterator = { next: next }, current = this;
+      function next() {
+        if(current) {
+          let value = current.value;
+          current = current.next;
+          return { done: false, value: value }
+        } else {
+          return { done: true }
+        }
+      }
+      return iterator;
+    }
+    let one = new Obj(1), two = new Obj(2), three = new Obj(3);
+    one.next = two
+    two.next = three
+    for(let i of one) {
+      console.log(i)
+    }
+    下面是另一个为对象添加Iterator接口的例子
+    let obj = {
+      data: ['hello', 'world'],
+      [Symbol.iterator]() {
+        const self = this
+        let index = 0
+        return {
+          next() {
+            if(index < self.data.length) {
+              return { value: self.data[index++], done: false }
+            } else {
+              return { value: undefined, done: true }
+            }
+          }
+        }
+      }
+    }
+    对于类似数组的对象(存在数值键名和length属性) 部署Iterator接口 就是Symbol.iterator方法直接引用数组的Iterator接口
+    NodeList.prototype[Symbol.iterator] = Array.prototype[Symbol.iterator]
+    下面是另一类似数组的对象调用数组的Symbol.iterator方法的例子
+    let iterable = {
+      0: 'a',
+      1: 'b',
+      2: 'c',
+      length: 3,
+      [Symbol.iterator]: Array.prototype[Symbol.iterator]
+    };
+    for(let item of iterable) {
+      console.log(item)
+    }
+    注意 普通对象部署数组的Symbol.iterator方法 并无效果
+    let iterator = {
+      a: 'a',
+      b: 'b',
+      c: 'c',
+      length: 3,
+      [Symbol.iterator]: Array.prototype[Symbol.iterator]
+    };
+    for(let item of iterator) {
+      console.log(item)
+    }
+    如果Symbol.iterator方法对应的不是遍历器生成函数 解释引擎将会报错
+    有了遍历器接口 数据结构就可以用for...of循环遍历 也可以使用while循环遍历
+    调用Iterator接口的场合：
+    1.for...of 
+    2.解构赋值：对数组和Set结构进行解构赋值时 会默认调用Symbol,iterator方法
+    let set = new Set().add('a').add('b').add('c'), [x, y] = set, [first, ...rest] = set
+    console.log(x, y, first, rest)
+    3.扩展运算符:扩展运算符(...) 也会调用默认的Iterator接口
+    let str = 'hello';
+    console.log([...str])
+    注 实际上 这提供了一种简便机制 可以将任何部署了Iterator接口的数据结构 转为数组也就是说 只要某个数据结构部署了Iterator接口
+    就可以对它使用扩展运算符，将其转为数组
+    let arr = [...iterable]
+    4.yield*:后面跟的时一个可遍历的结构 它会调用该结构的遍历器接口
+    let generator = function*() {
+      yield 1;
+      yield* [2,3,4];
+      yield 5;
+    }, iterator = generator();
+    console.log(iterator.next())
+    5.其他场合：由于数组的遍历会调用遍历器接口 所有任何接受数组作为参数的场合 其实都调用了遍历器接口
+    如：for...of Array.from() Map() Set() WeakSet WeakMap Promise.all() Promise.race()
+    字符串的Iterator接口：
+    字符串是一个类似数组的对象 也原生具有Iterator接口
+    let someString = 'hi', iterator = someString[Symbol.iterator]()
+    console.log(typeof someString[Symbol.iterator], iterator.next())
+    可以覆盖原生的Symbol.iterator方法 达到修改遍历器行为的目的
+    let str = new String('hi');
+    console.log(str)
+    str[Symbol.iterator] = function() {
+      return {
+        next() {
+          if(this._first) {
+            this._first = false;
+            return { value: 'bye', done: false }
+          } else {
+            return { done: true }
+          }
+        },
+        _first: true
+      }
+    }
+    console.log([...str], str)
+    Iterator接口和Generator函数：Symbol.iterator方法的最简单实现 还是使用Generator函数
+    遍历器对象的return() throw()：遍历器对象除了具有next方法 还可以具有throw和return方法
+    return方法的使用场合是 如果for...of循环提前退出(通常是因为出错 或者有break语句) 就会调用return方法
+    如果一个对象在完成遍历前 需要清理或释放资源 就可以部署return方法
+    function readLinesSync(file) {
+      return {
+        [Symbol.iterator]() {
+          return {
+            next() {
+              return { done: false };
+            },
+            return() {
+              file.close();
+              return { done: true };
+            }
+          }
+        }
+      }
+    }
+    会在输出文件的第一行以后 就会执行return方法 关闭这个文件
+    for(let line of readLinesSync(fileName)) {
+      console.log(line);
+      break;
+    }
+    会在执行return方法关闭文件之后 再抛出错误
+    for(let line of readLinesSync(fileName)) {
+      console.log(line);
+      throw new Error()
+    }
+    注意 return方法必须返回一个对象
+    for...of循环调用遍历器接口 数组的遍历器接口只返回具有数字索引的属性 这一点和for...in循环不一样
+    let arr = [2,34,5]
+    arr.foo = 'hello'
+    for(let i in arr) {
+      console.log(i)
+    }
+    for(let val of arr) {
+      console.log(val)
+    }
+    Set和Map结构：
+    let engines = new Set(["Gecko", "Trident", "Webkit", "Webkit"]), es6 = new Map();
+    es6.set('edition', 6).set('committee', 'TC39').set('standard', 'ECMA-262')
+    console.log(engines, es6)
+    for(let val of engines) {
+      console.log(val)
+    }
+    for(let index of es6) {
+      console.log(index)
+    }
+    计算生成的数据结构：是在现有的数据结构的基础上 计算生成的：
+    entries():返回一个遍历器对象 用来获取[键名，键值]组成的数字
+    key():返回一个遍历器对象 用来遍历所有的键名
+    values():返回一个遍历器对象 用来遍历所有的键值
+    类似数组的对象；字符串、NodeList对象、arguments对象
+    let str = 'hello';
+    for(let s of str) {
+      console.log(s)
+    }
+    function printArgs() {
+      for(let x of arguments) {
+        console.log(x)
+      }
+    }
+    printArgs('a', 'b')
+    并不是所有类似数组的对象都具有Iterator接口 一个简单的解决方法 就是使用Array.from方法将其转为数组
+    let arrayLike = { length: 2, 0: 'a', 1: 'b', a: 'c' };
+    for(let val of Array.from(arrayLike)) {
+      console.log(val)
+    }
+    对象：对于普通的对象 for...of结构不能直接使用，必须部署了Iterator接口 for...in循环依然可以用来遍历键名
+    与其他遍历语法的比较
+    for:写法比较麻烦
+    forEach:无法中途跳出forEach循环 break命令或return命令都不能奏效
+    */
+    
+  </script>
+</body>
+</html>
