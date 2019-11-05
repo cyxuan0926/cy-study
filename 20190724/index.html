@@ -1200,10 +1200,11 @@ formap.map(val => {
   // console.log(val)
   formap = [...[3,4,6]]
 })
+// 如果用Generator的done思想来控制的话 是不是会比剪切遍历好
 let testA = [{
   path: '/prison-affairs-public',
   name: 'prison-affairs-public-manage',
-  meta: { hidden: true, breadcrumbName: '狱务公开信息管理'},
+  meta: { hidden: true, breadcrumbName: '狱务公开信息管理', done: false },
   children: [{
     path: '/prison-affairs-public/prison-affairs-public',
     name: 'prison-affairs-public-prison-affairs-public',

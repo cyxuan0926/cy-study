@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-let output;
+// let output;
 // 问题的出现
 // async function main() {
 //   const dynamic = await import(someMission);

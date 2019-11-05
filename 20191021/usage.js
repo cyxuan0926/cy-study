@@ -16,5 +16,5 @@
 // console.log(outputPlusValue(100));
 // setTimeout(() => console.log(outputPlusValue(100), 1000))
 console.log('X1')
-await new Promise(r => setTimeout(r, 1000))
+// await new Promise(r => setTimeout(r, 1000))
 console.log('X2');
