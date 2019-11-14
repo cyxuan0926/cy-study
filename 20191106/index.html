@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <script>
+//     function fetchRandom() {
+//   const url = `http://192.168.0.174:8000/`;
+//   return fetch(url);
+// }
+
+// async function *asyncGenerator() {
+//   console.log('Start');
+//   const result = await fetchRandom();
+//   yield 'Result: ' + await result.text();
+//   console.log('Done');
+// }
+
+// const ag = asyncGenerator();
+
+// ag.next().then(({value, done}) => {
+//   console.log(111, value)
+// })
+async function *gen1() {
+  yield 'a';
+  yield 'b';
+  return 2;
+}
+
+async function *gen2() {
+  const result = yield* gen1()
+  console.log(result)
+}
+let a = gen2()
+console.log(a.next())
+  </script>
+</body>
+</html>
