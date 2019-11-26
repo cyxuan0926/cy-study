@@ -4,10 +4,91 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Document</title>
+  <title>main</title>
 </head>
 <body>
+  <h1>webWorker</h1>
+  <input type="text" id="inputNum" />
+  <button id="bt">开始计算</button>
+  <div id="result">计算中...</div>
+  <!-- <script id="worker" type="adad">
+    onmessage = function(ev) {
+      console.log(ev.data);
+      postMessage('worker message');
+    }
+  </script> -->
   <script>
+    window.onload = function() {
+      const worker = new Worker('myworker.js');
+      const sab = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 100000);
+      const ia = new Int32Array(sab);
+      ia[37] = 163;
+      console.log(1);
+      worker.postMessage(ia);
+      console.log(2);
+      // Atomics.store(ia, 37, 123456);
+      console.log(3);
+      Atomics.wake(ia, 37, 1);
+      console.log(4);
+      // const length = 10;
+      // const size = Int32Array.BYTES_PER_ELEMENT * length;
+      // const sharedBuffer = new SharedArrayBuffer(size);
+      // const sharedArray = new Int32Array(sharedBuffer);
+      // const newArrayValue = 502;
+      // Atomics.store(sharedArray, 0, newArrayValue);
+      // const arrayIndex = 0;
+      // const queuePos = 1;
+      // Atomics.wake(sharedArray, arrayIndex, queuePos);
+      // for (let i = 0; i < 10; i++) {
+      //   Atomics.store(sharedArray, i, 0); // 所有可能写入内存的操作之后进行
+      // }
+      // worker.postMessage(sharedBuffer);
+      // const sab = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 100000);
+      // const ia = new Int32Array(sab);
+      // // const primes = new PrimeGenerator();
+      // for (let i = 0; i < ia.length; i++) {
+      //   ia[i] = i + 1;
+      // }
+      // const w = new Worker('myworker.js');
+      // w.postMessage(ia);
+      // ia[42] = 314159;
+      // ia[37] = 123456;
+      // const sharedBuffer = new SharedArrayBuffer(1024);
+      // w.postMessage(sharedBuffer);
+      // const sharedArray = new Int32Array(sharedBuffer);
+      // sharedArray[0] = 1;
+    }
+    // bt.onclick = function() {
+    //   const n = inputNum.value;
+    //   const w = new Worker('myworker.js');
+    //   w.postMessage(n);
+    //   w.onmessage = function(e) {
+    //     result.innerHTML = e.data;
+    //   }
+    // }
+    // const blob = new Blob([document.querySelector('#worker').textContent]);
+    // const url = window.URL.createObjectURL(blob);
+    // const w = new Worker(url);
+    // w.postMessage('main message');
+    // w.onmessage = function(e) {
+    //   console.log(e.data);
+    // }
+  // const w = new Worker('myworker.js');
+  // w.postMessage('hi');
+  // w.onmessage = function(ev) {
+  //   console.log(ev.data);
+  // }
+//     let socket = new WebSocket('ws://127.0.0.1:8001');
+// socket.binaryType = 'arraybuffer';
+// socket.addEventListener('open', function(event) {
+//   const typedArray = new Uint8Array(4);
+//   console.log(typedArray);
+//   socket.send(typedArray);
+// });
+// socket.addEventListener('message', function(event) {
+//   const arrayBuffer = event.data;
+//   console.log('接收', arrayBuffer)
+// })
 //     function fetchRandom() {
 //   const url = `http://192.168.0.174:8000/`;
 //   return fetch(url);
@@ -25,18 +106,18 @@
 // ag.next().then(({value, done}) => {
 //   console.log(111, value)
 // })
-async function *gen1() {
-  yield 'a';
-  yield 'b';
-  return 2;
-}
+// async function *gen1() {
+//   yield 'a';
+//   yield 'b';
+//   return 2;
+// }
 
-async function *gen2() {
-  const result = yield* gen1()
-  console.log(result)
-}
-let a = gen2()
-console.log(a.next())
+// async function *gen2() {
+//   const result = yield* gen1()
+//   console.log(result)
+// }
+// let a = gen2()
+// console.log(a.next())
   </script>
 </body>
 </html>

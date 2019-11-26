@@ -163,7 +163,7 @@
       如果一段数据包括多种类型(比如服务器传来的HTTP数据) 这时除了建立ArrayBuffer对象的复合视图之外 还可以通过DataView视图进行操作。DataView视图提供更多
       操作选项 而且支持设定字节序。设计是用来处理网络设备传来的数据 所以大/小端字节序。本身也是构造函数 接受一个ArrayBuffer对象作为参数 生成视图
       DataView(ArrayBuffer buffer [,字节起始位置, [,长度]])
-      DataView实例提供8个字节方法读取内存
+      DataView实例提供8个字节方法读取内存(第一个参数是一个字节序号 表示从哪个字节开始读取)
         getInt8: 读取1个字节 返回一个8位整数
         getUint: 读取1一个字节 返回一个无符号的8位整数
         getInt16: 读取2个字节 返回一个16位整数
@@ -174,7 +174,7 @@
         getFloat64: 读取8个字节 返回一个64位浮点数
       注：这一系列get方法的参数都是一个字节序号(不能是负数 否则会报错) 表示从哪个字节开始读取 如果一次读取两个或两个以上字节 就必须明确数据的存储方式 到底是小端字节序
       还是大端字节序。默认情况下 DataView的get方法使用大端字节序读取数据 如果需要使用小端字借序解读 必须在get方法的第二个参数指定true
-      DataView视图提供8个写入内存的方法
+      DataView视图提供8个写入内存的方法(第一个参数是字节序号 表示从哪个字节开始写入 第二个参数为写入的数据，第三个参数为字节序 true表示小端字节)
         setInt8: 写入1个字节的8位整数
         setUint8: 写入1个字节的8位无符号整数
         setInt16: 写入2个字节的16位整数
@@ -183,7 +183,70 @@
         setUint32: 写入4个字节的32位无符号整数
         setFloat32: 写入4个字节的32位浮点数
         setFloat64: 写入8个字节的64位浮点数
-        注：接受两个参数 第一个参数是字节序号 表示从哪个字节开始写入 第二个参数为写入的数据 对于两个或两个以上字节的方法 需要指定第三个参数 false或undefined表示使用大端字节序写入 true表示使用小端字节序写入
+        注：接受两个参数 第一个参数是字节序号 表示从哪个字节开始写入 第二个参数为写入的数据 对于两个或两个以上字节的方法 需要指定第三个参数 false或undefined表示使用大端字节序写入 true表示使用小端字节序写入]
+        浮点数在计算机中的表示
+          浮点数在计算机中表示较为复杂 首先需要把浮点数化为规格化数 借助规格化数来对浮点数据进行储存表示
+            规格化数 = (-1)^s * 2^E * 1.f => 1位s 8位e 23位f
+            s为0则表示正数 为1则表示负数
+            E为阶码 反映了小数点在数据中的位置 指数e是由E转换而来 公式为e = E + 127
+            f位数不够向右补0
+      二进制应用
+        AJAX
+          XMLHTTPRequest允许服务器返回二进制数据，如果明确制定返回的二进制数据类型 可以把返回类型(responseType) 设为arrayBuffer 如果不知道 就设为Blob
+        Canvas
+          网页Canvas元素输出的二进制像素数据 就是TypedArray数组
+        websocket
+          可以通过arraybuffer 发送或接收二进制数据
+        Fetch API
+          其取回的数据 就是ArrayBuffer对象
+        File API
+          如果知道一个文件的二进制数据类型 也可以将这个文件读取为ArrayBuffer对象
+          下面以处理bmp文件为例 假定file变量是一个指向bmp文件的文件对象
+        SharedArrayBuffer
+          web worker引入了多线程：主线程用来与用户互动 woker线程用来承担计算任务。每个线程的数据都是隔离的 通过postMessage()通信.
+          线程之间的数据交换可以是各种格式 不仅仅是字符串 也可以是二进制数据。这种交换采用的是复制机制 即一个进程将需要分享的数据复制一份，通过postMessage方法交给另一个进程
+          如果数据量比较大 这种通信的效率显然比较低。
+          引入sharedArrayBuffer 允许Worker线程与主线程共享同一块内存.sharedArrayBuffer的API与ArrayBuffer一模一样 唯一的区别是后者无法共享数据
+          sharedArrayBuffer与ArrayBuffer一样 本身是无法读写的 必须在上面建立视图 然后通过视图读写
+        Atomice对象
+          多线程共享内存 最大的问题就是如何防止两个线程同时修改某个地址 或者说 当一个线程修改共享内存以后 必须有一个机制让其他线程同步。sharedArrayBuffer API提供Atomics对象 保证所有共享内存的操作
+          都是'原子性'的 并且可以在所有线程内同步。
+          原子性操作
+            一条普通的命令被编译器处理以后 会变成多条机器指令。如果是单线程运行 这是没有问题的 多线程环境并且共享内存时 就会出问题 因为这一组机器指令的运行期间 可能会插入其他线程的指令 从而导致运行结果出错 
+          Atomics对象可以保证一个操作所对应的多条机器指令 一定是作为一个整体运行的 中间不会被打断 也就是说 它所涉及的操作都可以看作是原子性的单操作 这可以避免线程竞争 提高多线程共享内存时的操作安全
+          Atomics.store()
+            store方法用来向共享内存写入数据，Atomice.store(array, index) 也是返回sharedArray[index]的值
+          Atomics.load()
+            load方法用来从共享内存读出数据 Atomics.load(array, index, value) 返回sharedArray[index]的值
+          Atomics.exchange()
+            也是写入数据 返回被替换的值
+          Atomics.wait()、Atomics.wake(): 这两个方法用于等待通知。这两个方法相当于锁内存 即一个线程进行操作时 让其他线程休眠(建立锁) 等到操作结束 再唤醒那些休眠的线程(解除锁)
+          Atomics.wait(sharedArray, index, value, timeout)
+            sharedArray: 共享内存的视图数组
+            index: 视图数据的位置(从0开始)
+            value: 该位置的预期值 一旦实际值等于预估值 就进入休眠
+            timeout: 整数 表示过了这个时间以后 就自动唤醒 单位是毫秒 该参数可选 默认是 Infinity 即无期限的休眠 只有通过Atomics.wake()方法才能唤醒
+            返回值是一个字符串 共有三种可能的值
+              sharedArray[index]不等于 value 返回字符串not-equal 否则就进入休眠
+              Atomics.wake()方法唤醒 就返回字符串ok
+              如果因为超时唤醒 就返回字符串 timed-out
+          Atomics.wake(sharedArray, index, count)
+            sharedArray: 共享内存的视图数组
+            index: 视图数据的位置(从0开始)
+            count: 需要唤醒的Worker线程的数量 默认是 Infinity
+            wake方法一旦唤醒休眠的Worker线程 就会壤土继续往下运行
+          运算方法
+            共享内存上面的某些运算是不能被打断的 即不能在运算过程中 让其他线程改写内存上面的值。Atomics对象提供了一些运算方法 防止数据被改写
+            Atomics.add(sharedArray, index, value)
+              用于将value加到sharedArray[index] 返回sharedArray[index]旧的值
+            Atomics.sub(sharedArray, index, value)
+              用于将value加到sharedArray[index] 返回sharedArray[index]旧的值
+            Atomics.and(sharedArray, index, value)
+              进行位运算and 并返回旧的值
+            Atomics.or(sharedArray, index, value)
+              进行位运算and 并返回旧的值
+            Atomics.xor(sharedArray, index, value)
+              进行位运算xor(异或) 并返回旧的值
  *    
  */
 // const buf = new ArrayBuffer(32);
@@ -354,3 +417,98 @@
 // const v1 = dv.getUint16(1, true); // 小端
 // const v2 = dv.getUint16(3, false); // 大端
 // const v3 = dv.getUint16(3); // 大端
+// dv.setInt32(0, 25, false) // 大端字节序 0号开始  000000000000000000000000000011001 => 000000000000000000000000000011001
+// console.log(dv.getInt8(3)); // 默认是大端字节序 然后计算机中的存储大部分是小端字节序 这也符合逻辑 读取出来的东西就是我们实际要的东西 不需要转换了
+// dv.setFloat32(8, 2.5, true) // 小端字节序 第8个字节开始 10 1 10.0 = 1.01 * (-1)^0 * 2^1 s = 0 E = 1 e = 127+1=128  01000000 00100000 00000000 00000000 => 00000000 00000000 00100000 01000000
+// console.log(dv.getUint8(8), dv.getUint8(9), dv.getUint8(10), dv.getUint8(11))
+//  50.0 =>  110010.0B = (-1) ^ 0 * 1.100100 * 2 ^ 5 s = 0 E = 5  f= 0.100100 e = 127 + 5 =132   10000100 = 4 + 128 = 132 01000010010010000000000000000000
+// let xhr = new XMLHttpRequest();
+// xhr.open('GET', someUrl);
+// xhr.responseType = 'arraybuffer';
+// xhr.onload = function() {
+//   let arrayBuffer = xhr.response;
+// };
+// xhr.onreadystatechange = function(req) {
+//   if (req.readyState === 4) {
+//     const arrayResponse = xhr.response;
+//     const dataView = new DataView(arrayResponse);
+//     const ints = new Uint32Array(dataView.byteLength / 4);
+//     xhrDiv.style.backgroundColor = "#00FF00";
+//     xhrDiv.innerText = "Array is " + ints.length + "uints long";
+//   }
+// }
+// xhr.send();
+// const canvas = document.getElementById('myCanvas');
+// const ctx = canvas.getContext('2d');
+// const imageData = ctx.getImageData(0,0,canvas.clientWidth, canvas.height);
+// const uint8ClapmedArray = imageData.data;
+// let socket = new WebSocket('ws://127.0.0.1:8081');
+// socket.binaryType = 'arraybuffer';
+// // socket.addEventListener('open', function(event) {
+// //   const typedArray = new Uint8Array(4);
+// //   console.log(typedArray);
+// //   socket.send(typedArray.buffer);
+// // });
+// socket.addEventListener('message', function(e) {
+//   const arrayBuffer = e.data;
+//   console.log('接收', arrayBuffer)
+// })
+// fetch(url).then(response => {
+//   return response.arrayBuffer()
+// }).then(arrayBuffer => {
+//   console.log(arrayBuffer);
+// })
+// const fileInput = document.getElementById('fileInput');
+// const file = fileInput[0];
+// const reader = new FileReader();
+// reader.readAsArrayBuffer(file);
+// reader.onload = function() {
+//   const arrayBuffer = reader.result;
+// }
+// const reader = new FileReader();
+// reader.addEventListener('load', processimage, false);
+// reader.readAsArrayBuffer(file);
+// function processimage(e) {
+//   const buffer = e.target.result;
+//   const datav = new DataView(buffer);
+//   const bitmap = {};
+//   // 具体处理图像数据时 先处理bmp的文件头
+//   bitmap.fileheader = {};
+//   bitmap.fileheader.bfType = datav.getUint16(0, true);
+//   bitmap.fileheader.bfSize = datav.getUint32(2, true);
+//   bitmap.fileheader.bfReserved1 = datav.getUint16(6, true);
+//   bitmap.fileheader.bfReserved2 = datav.getUint16(8, true);
+//   bitmap.fileheader.bfOffBits = datav.getUint32(10, true);
+//   // 接着处理图像元信息部分
+//   bitmap.infoheader = {};
+//   bitmap.infoheader.biSize = datav.getUint32(14, true);
+//   bitmap.infoheader.biWidth = datav.getUint32(18, true);
+//   bitmap.infoheader.biHeight = datav.getUint32(22, true);
+//   bitmap.infoheader.biPlanes = datav.getUint16(26, true);
+//   bitmap.infoheader.biBitCount = datav.getUint16(28, true);
+//   bitmap.infoheader.biCompression = datav.getUint32(30, true);
+//   bitmap.infoheader.biSizeImage = datav.getUint32(34, true);
+//   bitmap.infoheader.biXPelsPerMeter = datav.getUint32(38, true);
+//   bitmap.infoheader.biYPelsPerMeter = datav.getUint32(42, true);
+//   bitmap.infoheader.biClrUsed = datav.getUint32(46, true);
+//   bitmap.infoheader.biClrImportant = datav.getUint32(50, true);
+//   // 最后处理图像本身的像素信息
+//   const start = bitmap.fileheader.bfOffBits;
+//   bitmap.pixels = new Uint8Array(buffer, start);
+// }
+/** 
+ * sharedArrayBuffer：允许共享同一块内存
+ * Atomics(原子性操作)：
+ *  store(array, index, value): 允许向共享内存写入数据。保证该位置的赋值操作 一定是在它前面的所有可能会改写成内存的操作结束后执行 返回array[index]
+ *  load(array, index): 从共享内存读出数据 而该位置的取值操作 一定是在它后面所有可能会读取该位置的操作开始之前执行 返回 array[index]
+ *  exchange(array, index, value): 写入数据和store一样 只是其返回的是被替换的值
+ *  wait(sharedArray, index, value, timeout[Infinity]): 建立锁,锁住内存,让其他线程休眠
+ *  wake(sharedArray, index, count[Infinity]): 解除锁 唤醒那些休眠的线程
+ *共享内存上面的某些运算是不能被打断的 即不能在运算过程中 让其他线程改写的内存上面的值
+    Atomics.add(sharedArray, index, value): 返回sharedArray[index]旧的值
+    Atomics.sub(sharedArray, index, value): 返回sharedArray[index]旧的值
+    Atomics.and(sharedArray, index, value): 与运算 返回旧的值
+    Atomics.or(sharedArray, index, value): 或运算 返回旧的值
+    Atomics.xor(sharedArray, index, value)：异或运算 返回旧的值
+    Atomics.compareExchange(sharedArray, index, oldVal, newVal): 如果sharedArray[index]等于oldVal, 就写入newVal 返回oldVal
+*/

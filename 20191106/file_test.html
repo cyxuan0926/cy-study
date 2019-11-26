@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>fileReader</title>
+  <style>
+    label {
+      color: red;
+    }
+    #dropbox {
+      width: 200px;
+      height: 200px;
+      border: 1px solid red;
+    }
+    .obj {
+      width: 200px;
+      height: 200px;
+      border: 1px solid red; 
+    }
+  </style>
+</head>
+<body>
+  <!-- <input type="file" id="fileElem" multiple style="display: none;" onchange="handleFiles(this.files)"> -->
+  <!-- <a href="#" id="fileSelect">Select some files</a>
+  <div id="fileList">
+    <p>No files selected!</p>
+  </div> -->
+  <input type="file" id="input" multiple onchange="handleFiles(this.files)" style="display: none;" class="visually-hidden">
+  <!-- <button id="fileSelect">Select some files</button> -->
+  <label for="input">Select some files</label>
+  <!-- <div id="dropbox"></div> -->
+  <div id="preview"></div>
+  <script>
+    /**
+     webGL/woker/dataTransfer/URL/防抖/节流
+     FileReader(异步读取用户本地电脑上的文件内容)和createObjectURL(得到file文件的数据的url引用)的区别：
+      FileReader.onerror 只读 当读取文件发生错误时返回的错误信息
+      FileReader.readyState 只读 表示FileReader对象的当前状态 0：还没有加载数据 1 数据加载中 2 数据已经加载完成
+      FileReader.result 返回文件的内容 只有当读取方法调用并且读取完成时 此属性才能用
+      FileReader.onload 读取成功完成时触发此事件
+      FileReader.onloadend 读取结束时触发此事件 不论读取成功与否
+      FileReader.onabort 读取发生中断时触发此事件
+      FileReader.onloadstart 读取开始时触发此事件
+      FileReader.onprogress 读取进行时触发此事件
+     方法
+      FileReader.abort() 中断读取 此时readyState将改变为DONE
+      FileReader.readAsArrayBuffer() 读取文件 并作为一个ArrayBuffer对象返回
+      FileReader.readAsBinaryString() 读取文件 并返回一个由文件二进制数据转换成的String字符串
+      FileReader.readAsDataURL() 读取文件 并返回一个引用文件内容的URL对象
+      FileReader.readAsText() 读取文件 并返回一个text string文本字符串类型
+     createObjectURL(利用URL对象createObjectURL()得到File文件的数据的url引用)
+      URL.createObjectURL(fileObject)
+        把一个File对象或者Blob对象创建一个URL对象
+      URL.revokeObjectURL()
+        释放由createObjectURL方法创建的URL对象 以便释放浏览器内存
+      注：createObjectURL创建的是一个对象的url引用 与FileReader的不同 并没有加载数据 所以要找img的onload事件中 保证img对象显示了图片后才能调用revokeObjectURL方法来释放创建的URL对象
+     FileReader对象的适用范围更广 不光是为了创建图片预览 还可以读取文件进行异步文件上传等功能
+     XMLHTTpRequest
+      使用XMLHTTpRequest来发送HTTP请求以实现网站和服务器之间的数据交换。发送一个HTTP请求 需要创建一个XMLHTTpRequest对象 打开一个URL 最后发送请求
+      处理响应
+        分析并操作responseXML属性
+      绕过缓存
+        一般地 如果缓存中有相应内容 XMLHTTpRequest会视图从缓存中读取内容。
+        有一个跨浏览器兼容的办法 就是给URL添加时间戳，因为本地缓存都是以URL作为索引 这样就可以使每个请求都是唯一的 也就可以这样来绕开缓存
+          如果你使用XMLHttpRequest来获得一个远程的XML文档的内容 responseXML属性将会是一个由XML文档解析而来的DOM对象  
+      XHMHTTpRequest.upload
+        这个属性返回一个XMLHTTpRequestUpload对象 用来表示上传的进度。这个对象是不透明的 但是作为一个XMLHttpRequestEventTarget 可以通过对其绑定事件来追踪它的进度
+        传送数据的时候 有一个progress事件 用来返回进度信息
+          分为上传和下载两种情况
+            下载的progress事件属于XMLHTTpRequest对象
+            上传的progress事件属于XMLHTTpRequest.upload对象
+     * 通过使用在HTML5中加入到DOM的文件API 使在web内容中让用户选择本地文件然后读取这些文件的内容成为可能。用户可以通过HTML中的<input>元素或者使通过拖拽来选择本地文件
+      FileList
+        一个FileList对象通常来自于一个HTML<input>元素的files属性 你可以通过这个对象访问到用户所选择的文件，该类型的对象还有可能来自用户的拖放操作，由DOM提供 列出了所有用户选择的文件
+        每一个代表了一个File对象 你可以通过文件列表FileList的length属性决定用户选择了多少文件
+      File
+        File接口提供有关文件的信息 并允许网页中的JavaScript访问其内容，通常情况下 File对象是来自用户在一个<input>元素上选择文件后返回的FileList对象 也可以是来自由拖放操作
+        生成的DataTransfer对象 或者来自HTMLCanvasElement上的mozGetAsFile()API.File对象是特殊类型的blob， 且可以用在任意的Blob类型的context中
+      获取被选择文件的信息
+        FileList对象由DOM提供 列出了所有用户选择的文件，列出了所有用户选择的文件 每一个代表了一个File对象
+        File对象提供了三个属性 包含了文件的有用信息
+          name：文件名称 只读字符串 包含文件名 不包含任何路径信息
+          size: 文件大小 按字节数计算 只读的64位整数
+          type：文件的MIME类型 只读字符串 当类型不能确定时为""
+      通过click()方法使用隐藏的file input元素:<input>元素的click()事件
+        你可以隐藏公认难看的file <input>元素并显示你自己的界面来打开文件选择器，然后显示哪个或哪些被用户选中了 你可以通过给input元素添加display:nonde的样式 再调用<input>元素的click()方法来实现
+        使用label元素来触发一个隐藏的file input元素
+      使用拖放来选择文件
+        从事件中获取到了dataTransfer这个域 然后从中得到文件列表
+      列子：
+        显示用户选择的图片的缩略图，用户在实际上传之前的图片的缩略图
+        使用对象URL
+          引入对DOM window.URL.createObjectURL()和window.URL.revokeObjectURL()方法的支持。这使得你可以创建用于引用任何数据的简单URL字符串 也可以引用一个包括用户电脑上的本地文件的DOM File对象
+          当你需要在HTML中通过URL来引用一个File对象时 你可以创建一个对象URL 就像这样
+            var objectURL = window.URL.createObjectURL(fileObj);
+          这个对象URL是一个标识File对象的字符串，每次你调用window.URL.createObjectURL()就会产生一个唯一的对象URL，即使是你对一个已创建了对象URL的文件再次创建一个对象URL。每个创建了的对象URL必须要释放
+          。当文档关闭时 它们会自动被释放。如果你的网页要动态使用它们 你需要显示调用window.URL.revokeObjectURL()来释放它们
+            window.URL.revokeObjectURL(objectURL)
+        使用对象URL来显示图片
+          上传一个用户选择的文件
+    */
+    // input.addEventListener('change', function(event) {
+    //   console.log(event.target.files)
+    // })
+    // function handleFiles(files) {
+    //   const fileList = files;
+    //   console.log(fileList);
+    // }
+    // fileSelect.addEventListener('click', function(e) {
+    //   if (input) input.click();
+    // }, false)
+    // dropbox.addEventListener('dragenter', function(e) {
+    //   console.log('dragenter');
+    //   e.stopPropagation();
+    //   e.preventDefault();
+    // })
+    // dropbox.addEventListener('dragover', function(e) {
+    //   console.log('dragover');
+    //   e.stopPropagation();
+    //   e.preventDefault();
+    // })
+    // dropbox.addEventListener('drop', function(e) {
+    //   console.log('drop');
+    //   e.stopPropagation();
+    //   e.preventDefault();
+    //   const dt = e.dataTransfer;
+    //   const files = dt.files;
+    //   handleFiles(files)
+    // })
+    function handleFiles(files) {
+      for(let i = 0; i< files.length; i++) {
+        var file = files[i], imageType = /^image\//;
+        if (!imageType.test(file.type)) continue;
+        var img = document.createElement('img');
+        img.classList.add('obj');
+        img.file = file;
+        preview.appendChild(img);
+        var reader = new FileReader(); // 创建FileReader来处理异步的图片加载 注 是异步读取
+        reader.onload = (function(aImg) { // FileReader的onload函数
+          return function(e) { 
+            aImg.src = e.target.result;
+          }
+        })(img);
+        reader.readAsDataURL(file); // readAsDataURL函数开始后台读取文件 当整个图片文件的内容都被全部加载完后 它们被转换成一个被传递到onload回调函数的data:URL
+      }
+    }
+    // window.URL = window.URL || window.webkitURL;
+    // fileSelect.addEventListener('click', function(e) {
+    //   e.preventDefault();
+    //   if (fileElem) fileElem.click();
+    // })
+    // function handleFiles(files) {
+    //   if (!files.length) {
+    //     fileList.innerHTML = '<P>No files selected!</P>'
+    //   }
+    //   else {
+    //     fileList.innerHTML = '';
+    //     var list = document.createElement('ul');
+    //     fileList.appendChild(list);
+    //     for (let i =0;i<files.length;i++) {
+    //       var li = document.createElement('li');
+    //       list.appendChild(li);
+    //       var img = document.createElement('img');
+    //       img.src = window.URL.createObjectURL(files[i]); // 创建blob URL
+    //       img.height = 60;
+    //       img.onload = function() { // 当图像装载完毕时调用的事件句柄
+    //         window.URL.revokeObjectURL(this.src);
+    //       }
+    //       li.appendChild(img);
+    //       var info = document.createElement('span');
+    //       info.innerHTML = files[i].name + ": " + files[i].size + " bytes";
+    //       li.appendChild(info);
+    //     }
+    //   }
+    // }
+    function sendFiles() {
+      let imgs = document.querySelectorAll('.obj');
+      for(let i = 0; i< imgs.length; i++) {
+        new FileUpload(imgs[i], imgs[i].file);
+      }
+    }
+    function FileUpload(img, file) {
+      const reader = new FileReader();
+      this.ctrl = createThrobber(img);
+      const xhr = new XMLHTTpRequest();
+      this.xhr = xhr;
+      let self = this;
+      this.xhr.upload.addEventListener('progress', function(e) {
+        console.log(e);
+        if (e.lengthComputable) {
+          let percentage = Math.round(( e.loaded * 100 ) / e.total);
+          self.ctrl.update(percentage);
+        }
+      })
+      xhr.upload.addEventListener('load', function(e) {
+        self.ctrl.update(100);
+        let canvas = self.ctrl.ctx.canvas;
+        canvas.parentNode.removeChild(canvas);
+      })
+      xhr.open('post', 'http://demos.hacks.mozilla.org/paul/demos/resources/webservices/devnull.php');
+      xhr.overrideMimeType('text/plain; charset=x-user-defined-binary');
+      reader.onload = function(e) {
+        xhr.send(e.target.result);
+      }
+      reader.readAsBinaryString(file);
+    }
+    // function reqListener() {
+    //   console.log(this.responseText);
+    // }
+    // const oReq = new XMLHttpRequest();
+    // oReq.addEventListener('load', reqListener);
+    // oReq.open('GET', 'http://192.168.0.174:8081/'); // open方法的第三个参数async的值决定的 如果该参数的值位false 则该XMLHTTpRequest请求以同步模式进行 否则该过程将以异步模式完成
+    // oReq.send();
+  </script>
+</body>
+</html>
