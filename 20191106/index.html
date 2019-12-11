@@ -7,10 +7,10 @@
   <title>main</title>
 </head>
 <body>
-  <h1>webWorker</h1>
+  <!-- <h1>webWorker</h1>
   <input type="text" id="inputNum" />
   <button id="bt">开始计算</button>
-  <div id="result">计算中...</div>
+  <div id="result">计算中...</div> -->
   <!-- <script id="worker" type="adad">
     onmessage = function(ev) {
       console.log(ev.data);
@@ -18,18 +18,18 @@
     }
   </script> -->
   <script>
-    window.onload = function() {
-      const worker = new Worker('myworker.js');
-      const sab = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 100000);
-      const ia = new Int32Array(sab);
-      ia[37] = 163;
-      console.log(1);
-      worker.postMessage(ia);
-      console.log(2);
-      // Atomics.store(ia, 37, 123456);
-      console.log(3);
-      Atomics.wake(ia, 37, 1);
-      console.log(4);
+    // window.onload = function() {
+    //   const worker = new Worker('myworker.js');
+    //   const sab = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 100000);
+    //   const ia = new Int32Array(sab);
+    //   ia[37] = 163;
+    //   console.log(1);
+    //   worker.postMessage(ia);
+    //   console.log(2);
+    //   // Atomics.store(ia, 37, 123456);
+    //   console.log(3);
+    //   Atomics.wake(ia, 37, 1);
+    //   console.log(4);
       // const length = 10;
       // const size = Int32Array.BYTES_PER_ELEMENT * length;
       // const sharedBuffer = new SharedArrayBuffer(size);
@@ -117,7 +117,8 @@
 //   console.log(result)
 // }
 // let a = gen2()
-// console.log(a.next())
+// console.log(a.next()) 00001000 11110111      
+// 00000101 + 11111000 = 11111101 = 10000011 -3
   </script>
 </body>
 </html>

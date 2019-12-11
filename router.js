@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * 前端路由的实现原理：本质就是监听URL的变化 然后匹配路由规则 显示相应的页面 并且无需刷新
  * 目前单页面使用的路由就只有两种实现方式：hash/history 模式
@@ -8,3 +9,4 @@
  */
 // import { auth } from './index.js'
 // auth()
+console.log('test')

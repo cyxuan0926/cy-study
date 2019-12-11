@@ -241,4 +241,3 @@ superAdmin = [{
     component: resolve => require(['@/views/sadmin-log/app-error-list'], resolve)
   }]
 }], c = ld.cloneDeep(superAdmin)
-console.log(c)

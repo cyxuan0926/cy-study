@@ -5,10 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Document</title>
+  <style>
+    article::before {
+      content: attr(data-parent);
+    }
+  </style>
 </head>
 <body>
-  <div :data-cy="a" id="my"></div>
-  <script>
+  <!-- <article  data-column="3" data-index-number="12314" data-parent="cars"> -->
+    this is an article
+  </article>
+  <!-- <div :data-cy="a" id="my"></div> -->
+  <!-- <input type="text" id="exampleInput" /> -->
+  <!-- <h1>hello world</h1>
+  <script src="router.js" data-option="value" id='sd'></script> -->
+  <!-- <script src="router.js" data-option="value">
+    console.log(document.currentScript, document.currentScript.dataset.option)
+  </script> -->
+  <script data-option="value">
+    console.log(document.currentScript, document.currentScript.dataset.option)
+    // console.log(test.dataset.column, test.dataset.indexNumber, test.dataset.parent)
+    // window.onload = () => {
+    //   console.log(sd.dataset.option)
+    // }
+    // function debounce(func, delay) {
+    //   const interval = delay || 1000
+    //   let timer = null;
+    //   return function(args) {
+    //     const context = this;
+    //     console.log(timer);
+    //     clearTimeout(timer);
+    //     timer = setTimeout(function() {
+    //       func.call(context, args);
+    //     }, interval);
+    //   }
+    // }
+    // function ajax(event) {
+    //   console.log('HTTP异步请求: ', event.target.value)
+    // }
+    // exampleInput.oninput = debounce(ajax)
+    // exampleInput.oninput = function(e) {
+    //   console.log('测试：', e.target.value)
+    // }
     // function test(arr) {
     //   let roles = [
     //     { roleList: [0], role: 0 },
@@ -55,35 +93,35 @@
     //   }
     //   console.log(testReturn())
     // 确实很多思想 很多优化 很重要 不做一个搬运工 要做一个creater
-    var isPrime=(function(){
-  var hash={};
-  return function(n){
-    console.log(hash)   
-    if(!isNaN(n)&&n>1){
-      if(n<=3) return true;
-      else if(n%2==0) return false;
-      else if(hash[n]!==undefined){
-        console.log("不用执行for循环...");
-        return hash[n];
-      }else{
-        console.log("执行for循环...");
-        for(var i=3;i<=Math.sqrt(n);i+=2){
-          if(n%i==0){
-            hash[n]=false;
+//     var isPrime=(function(){
+//   var hash={};
+//   return function(n){
+//     console.log(hash)   
+//     if(!isNaN(n)&&n>1){
+//       if(n<=3) return true;
+//       else if(n%2==0) return false;
+//       else if(hash[n]!==undefined){
+//         console.log("不用执行for循环...");
+//         return hash[n];
+//       }else{
+//         console.log("执行for循环...");
+//         for(var i=3;i<=Math.sqrt(n);i+=2){
+//           if(n%i==0){
+//             hash[n]=false;
 
-            return false;
-          }
-        }
-        hash[n]=true;
-        return true;
-      }
-    }else
-      throw new Error(
-        "必须输入>1的数字");    
-  }
-})();
-isPrime(117)
-isPrime(117)
+//             return false;
+//           }
+//         }
+//         hash[n]=true;
+//         return true;
+//       }
+//     }else
+//       throw new Error(
+//         "必须输入>1的数字");    
+//   }
+// })();
+// isPrime(117)
+// isPrime(117)
   </script>
 </body>
 </html>
