@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>JavaScript Loan Calculator</title>
+  <style>
+    .output {
+      font-weight: bold;
+    }
+    #payment {
+      text-decoration: underline;
+    }
+    #graph {
+      border: 1px solid black;
+    }
+    th, td {
+      vertical-align: top;
+    }
+  </style>
+</head>
+<body>
+  <table>
+    <tr>
+        <th>Enter Loan Data:</th>
+        <td></td>
+        <th>Loan Balance, Cumulative Equity, and Interest Payments</th></tr>
+    <tr>
+      <td>Amount of the loan ($):</td>
+      <td>
+        <input id="amount" onchange="calculate()">
+      </td>
+      <td rowspan="6">
+        <canvas id="graph" width="400" height="250" />
+      </td>
+    </tr>
+    <tr>
+      <td>Annual interest(%):</td>
+      <td>
+        <input id="apr" onchange="calculate()">
+      </td>
+    </tr>
+    <tr>
+      <td>Repayment period (years):</td>
+      <td>
+        <input id="years" onchange="calculate()">
+      </td>
+    </tr>
+    <tr>
+      <td>Zipcode (to find lenders):</td>
+      <td>
+        <input id="zipcode" onchange="calculate()">
+      </td>
+    </tr>
+    <tr>
+      <th>Approximate Payments:</th>
+      <td>
+        <button onclick="calculate()">Calculate</button>
+      </td>
+    </tr>
+    <tr>
+      <td>Monthly payment:</td>
+      <td>
+        $<span class="output" id="payment"></span>
+      </td>
+    </tr>
+    <tr>
+      <td>Total payment:</td>
+      <td>
+        $<span class="output" id="total"></span>
+      </td>
+    </tr>
+    <tr>
+      <td>Total interest:</td>
+      <td>
+        $<span class="output" id="totalinterest"></span>
+      </td>
+    </tr>
+    <tr>
+      <th>Sponsors:</th>
+      <td colspan="2">
+        Apply for your loan with one of these fine lenders:
+        <div id="lenders"></div>
+      </td>
+    </tr>
+  </table>
+  <script>
+    function calculate() {
+      /**
+       * amount 数量
+       * arp 利率
+       * years 年数
+       * zipcode 邮政编码
+       * payment 付出
+       * total 总计
+       * totalinterest：总的利息
+      */
+     const principal = parseFloat(amount.value);
+     const interest = parseFloat(apr.value) / 100 / 12;
+     const payments = parseFloat(years.value) / 12;
+     let x = Math.pow(1 + interest, payments), monthly = (principal * x * interest ) / (x - 1);
+     if (isFinite(monthly)) {
+       payment.innerHTML = monthly.toFixed(2);
+       total.innerHTML = (monthly * payments).toFixed(2);
+       totalinterest.innerHTML = ((monthly * payments ) - principal).toFixed(2);
+       save(amount.value, apr.value, years.value, zipcode.value);
+       chart(principal, interest, monthly, payments);
+      //  try {
+      //    getLenders(amount.value, apr.value, years.value, zipcode.value);
+      //  }
+      //  catch(e) {
+      //    chart(principal, interest, monthly, payments);
+      //  }
+     } else {
+       payment.innerHTML = '';
+       total.innerHTML = '';
+       totalinterest.innerHTML = '';
+       chart();
+     }
+    }
+    function save(amount, apr, years, zipcode) {
+      if (window.localStorage) {
+        localStorage.loan_amount = amount;
+        localStorage.loan_apr = apr;
+        localStorage.loan_years = years;
+        localStorage.loan_zipcode = zipcode;
+      }
+    }
+    function getLenders(amount, apr, years, zipcode) {
+      console.log('hello')
+      // if (!window.XMLHttpRequest) return;
+      // const ad = document.getElementById('lenders');
+      // if (!ad) return;
+      // let url = 
+    }
+    function chart(principal, interest, monthly, payments) {
+      graph.width = graph.width  // 用一种巧妙地手法清除并重置画布
+      if (arguments.length === 0 || !graph.getContext) return
+      let g = graph.getContext('2d'), width = graph.width, height = graph.height;
+      function paymentToX(n) {
+        return n * width / payments;
+      }
+      function amountToY(a) {
+        return height - (a * height / (monthly * payments * 1.05))
+      }
+      g.moveTo(paymentToX(0), amountToY(0))
+      g.lineTo(paymentToX(payments), amountToY(monthly * payments));
+      g.lineTo(paymentToX(payments), amountToY(0));
+      g.closePath();
+      g.fillStyle = '#f88';
+      g.fill();
+      g.font = 'bold 12px sans-serif';
+      g.fillText('Total Interest Payments', 20, 20);
+      let equity = 0;
+      g.beginPath();
+      g.moveTo(paymentToX(0), amountToY(0));
+      for (let i = 0; i < payments; i++) {
+        let thisMonthsInterest = (principal - equity) * interest;
+        equity += (monthly - thisMonthsInterest);
+        g.lineTo(paymentToX(i), amountToY(equity));
+      }
+      g.lineTo(paymentToX(payments), amountToY(0));
+      g.closePath();
+      g.fillStyle = 'green';
+      g.fill();
+      g.fillText('Total Equity', 20, 35);
+      let bal = principal;
+      g.beginPath();
+      g.moveTo(paymentToX(0), amountToY(bal));
+      for(let i = 0; i < payments; i++ ) {
+        let thisMonthsInterest = bal * interest;
+        bal -= (monthly - thisMonthsInterest);
+        g.lineTo(paymentToX(i), amountToY(bal));
+      }
+      g.lineWidth = 3;
+      g.stroke();
+      g.fillStyle = 'black';
+      g.fillText('Loan Balance', 20, 50);
+      g.textAlign = 'center';
+      let y = amountToY(0);
+      for (let year = 1; year * 12 < payments; year++) {
+        let x = paymentToX(year * 12);
+        g.fillRect(x - .5, y - 3, 1, 3);
+        if (year === 1) g.fillText('year', x, y - 5);
+        if (year % 5 === 0 && year * 12 !== payments) g.fillText(String(year), x, y - 5);
+      }
+      g.textAlign = 'right';
+      g.textBaseLINE = 'middle';
+      let ticks = [monthly * payments, principal];
+      let rightEdge = paymentToX(payments);
+      for (let i = 0; i < ticks.length; i++) {
+        let y = amountToY(ticks[i]);
+        g.fillRect(rightEdge - 3, y - .5, 3, 1);
+        g.fillText(String(ticks[i].toFixed(0)), rightEdge - 5, y);     
+      }
+    }
+  </script>
+</body>
