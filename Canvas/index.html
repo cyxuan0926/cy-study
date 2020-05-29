@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A simple canvas Example</title>
+  <style>
+    /* body {
+      background: #ddd;
+    }
+    #canvas {
+      margin: 10px;
+      padding: 10px;
+      background: #fff;
+      border: thin inset #aaa;
+    }
+    #canvas_CSS {
+      margin: 10px;
+      padding: 10px;
+      background: #fff;
+      border: thin inset #aaa;
+      width: 600px;
+      height: 300px;
+    } */
+    * {
+      padding: 0;
+      margin: 0;
+    }
+    .container {
+      width: 600px;
+      height: 300px;
+      display: flex;
+    }
+    .left {
+      flex: 1 2 300px;
+      background: red;
+    }
+    .right {
+      flex: 2 1 200px;
+      background: blue;
+    }
+    .left_shrink {
+      flex: 1 2 500px;
+    }
+    .right_shrink {
+      flex: 2 1 400px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="600" height="300">
+    Canvas not supported
+  </canvas>
+  <!-- <canvas id="canvas_CSS">
+    Canvas not supported
+  </canvas> -->
+  <!-- <div class="container">
+    <div class="left"></div>
+    <div class="right"></div>
+  </div>
+  <div class="container">
+    <div class="left left_shrink"></div>
+    <div class="right right_shrink"></div>
+  </div> -->
+  <script>
+    // https://github.com/Advanced-Frontend/Daily-Interview-Question/issues/381
+    // 当item元素主轴上面的宽度之和大于容器的时候 就会发生收缩 按照flex-shrink的值
+    // 总值是600px 一个item是500px 缩放比例是2 一个item 是400px 缩放比例是1
+    // 多余部分 400 + 500 - 600 = 300
+    // 缩放比例：500 * 2 / (500 * 2 + 400 * 1) 缩放的宽度：300 * 缩放比例
+    // 最终宽度：实际宽度 - 缩放的宽度
+    let canvas = document.getElementById('canvas'), context = canvas.getContext('2d')
+    context.font = '38pt Arial'
+    context.fillStyle = 'cornflowerblue'
+    context.strokeStyle = 'blue'
+    context.fillText('Hello Canvas', canvas.width/2 - 150, canvas.height / 2 + 15)
+    context.strokeText('Hello Canvas', canvas.width/2 - 150, canvas.height / 2 + 15)
+    // canvas.onmousedown = function(e) {
+    //   console.log('down');
+    // }
+    // let canvasCss = document.getElementById('canvas_CSS'), contextCss = canvasCss.getContext('2d')
+    // contextCss.font = '38pt Arial'
+    // contextCss.fillStyle = 'cornflowerblue'
+    // contextCss.strokeStyle = 'blue'
+    // contextCss.fillText('Hello Canvas', canvasCss.width/2 - 150, canvasCss.height / 2 + 15)
+    // contextCss.strokeText('Hello Canvas', canvasCss.width/2 - 150, canvasCss.height / 2 + 15)
+  </script>
+</body>
+</html>

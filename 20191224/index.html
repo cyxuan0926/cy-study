@@ -90,6 +90,20 @@
     // }
     // const newTest = new test(4, 7)
     // console.log(newTest)
+    // let a = 1;
+    // let b = (a++) + a;
+    // !!!注: undefined转换成数字是NaN null是 0
+    // console.log(1 + 2, '1' + '2', '1' + 2, 1 + {}, true + true, 2 + null, 2 + undefined)
+    // console.log(1 + 2 + 'blind mice', 1 + (2 + 'blind mice'))
+    // console.log(undefined === undefined, null === null, 0 === -0, null == undefined, 'afaasd' == true, '1' == true)
+    // var point = {
+    //   x: 1,
+    //   y: 1
+    // };
+    // console.log('x' in point, 'z' in point, 'toString' in point);
+    // String.prototype.localeCompare(): 返回一个数字来指示一个参考字符是否在排序前面或之后或与给定字符串相同/ 如果引用字符存在于比较字符之前则为负数 如果引用字符存在于比较字符之后则为正数 相等的时候返回0
+    const o = { x: 1 }, p = null;
+    console.log(o || o.x, p || 2)
   </script>
 </body>
 </html>

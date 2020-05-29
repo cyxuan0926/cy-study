@@ -1,0 +1,10 @@
+POST http://qa.api.auth.prisonpublic.com/oauth/token HTTP/1.1
+Authorization: Basic visit.admin 3cceca7160774a40b01c7fdadfb37da0
+Content-Type: application/x-www-form-urlencoded
+
+username=9999_sh
+&password=3m4c3n9J
+&grant_type=password
+&mode=account_password
+
+content

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprite sheets</title>
+  <style>
+    body {
+      background: #ddd;
+    }
+    #canvas {
+      position: absolute;
+      left: 0px;
+      top: 20px;
+      margin: 20px;
+      background: #fff;
+      border: thin inset rgb(100, 150, 230, .5);
+      cursor: pointer;
+    }
+    #readout {
+      margin-top: 10px;
+      margin-left: 15px;
+      color: blue;
+    }
+  </style>
+</head>
+<body>
+  <div id="readout" />
+  <canvas id="canvas"  width="500" height="250" />
+  <script>
+    let context = canvas.getContext('2d'), spriteSheet = new Image();
+    const windowToCanvas = function(canvas, x, y) {
+      const bbox = canvas.getBoundingClientRect();
+      return {
+        x: x - bbox.left * (canvas.width / bbox.width),
+        y: y - bbox.top * (canvas.height / bbox.height)
+      };
+    }
+    const drawBackground = function() {
+      const VERTICAL_LINE_SPACING = 12;
+      let i = context.canvas.height;
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.strokeStyle = 'lightgray';
+      context.lineWidth = .5;
+      while(i > VERTICAL_LINE_SPACING * 4) {
+        context.beginPath();
+        context.moveTo(0, i);
+        context.lineTo(context.canvas.width, i);
+        context.stroke();
+        i -= VERTICAL_LINE_SPACING;
+      }
+    }
+    const drawSpriteSheet = function() {
+      context.drawImage(spriteSheet, 0, 0);
+    }
+    const drawGuidelines = function(x, y) {
+      context.strokeStyle = 'rgba(0, 0, 230, .8)';
+      context.lineWidth = .5;
+      drawVerticalLine(x);
+      drawHorizontalLine(y);
+    }
+    const updateReadout = function(x, y) {
+      readout.innerText = '(' + x.toFixed(0) + ', ' + y.toFixed(0) + ')';
+    }
+    const drawHorizontalLine = function(y) {
+      context.beginPath();
+      context.moveTo(0, y + .5);
+      context.lineTo(context.canvas.width, y + .5);
+      context.stroke();
+    }
+    const drawVerticalLine = function(x) {
+      context.beginPath();
+      context.moveTo(x + .5, 0);
+      context.lineTo(x + .5, context.canvas.height);
+      context.stroke();
+    }
+    canvas.onmousemove = function(e) {
+      const loc = windowToCanvas(canvas, e.clientX, e.clientY);
+      drawBackground();
+      drawSpriteSheet();
+      drawGuidelines(loc.x, loc.y);
+      updateReadout(loc.x, loc.y);
+    }
+    spriteSheet.src = 'running-sprite-sheet.png';
+    spriteSheet.onload = function(e) {
+      drawSpriteSheet();
+    }
+    drawBackground();
+  </script>
+</body>
+</html>
