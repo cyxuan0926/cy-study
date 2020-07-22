@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emmet</title>
+</head>
+<body>
+  <script>
+    let a = [1, 5, 6, 3,10, 2, 4], b;
+    // a.push(1,2,3);
+    // a.pop();
+    // a.shift();
+    // a.unshift('a', 'b', 'c')
+    // b = a.splice(0, 0, 'cy', 'wcx');
+    // b = a.slice(0, 2)
+    // b = a.concat(['cy', 'wcx', 'yanli']);
+    // b = a.indexOf(2, 2);
+    // b = a.lastIndexOf(2, -1);
+    // b = a.find(item => item > 3);
+    // b = a.filter(item => item > 3);
+    // b = a.findIndex(item => item > 3);
+    // b = a.sort()
+    // b = a.reverse()
+    // a.sort((a, b) => b - a)
+    // const months = ['March', 'Jan', 'Feb', 'Dec'];
+    // months.sort();
+    // console.log(months);
+    // const array1 = [1, 30, 4, 21, 100000];
+    // array1.sort();
+    // console.log(array1);
+    // console.log(a, b);
+    // const numbers = [4, 2, 5, 1, 3]
+    // console.log(numbers.sort())
+    const stringArray = ['Blue', 'Humpback', 'Beluga'];
+    const numericStringArray = ['80', '9', '700'];
+    const numberArray = [40, 1, 5, 200];
+    const mixedNumericArray = ['80', '9', '700', 40, 1, 5, 200];
+    function compareNumbers(a, b) {
+      return a - b;
+    }
+    console.log('stringArray: ' + stringArray.join());
+    console.log('Sorted: ' + stringArray.sort());
+    console.log('numberArray: ' + numberArray.join());
+    console.log('Sorted without a compare function: ' + numberArray.sort());
+    console.log('Sorted with compareNumbers: ' + numberArray.sort(compareNumbers));
+    console.log('numericStringArray:'+ numericStringArray.join());
+    console.log('Sorted without a compare function:'+ numericStringArray.sort());
+    console.log('Sorted with compareNumbers:'+ numericStringArray.sort(compareNumbers));
+    console.log('mixedNumericArray:'+ mixedNumericArray.join());
+    console.log('Sorted without a compare function:'+ mixedNumericArray.sort());
+    console.log('Sorted with compareNumbers:'+ mixedNumericArray.sort(compareNumbers));
+  </script>
+</body>
+</html>

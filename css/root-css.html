@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>:root css</title>
+  <style>
+    :root {
+      /* color: red; */
+      --text-red: red;
+    }
+    h1 {
+      color: var(--text-red);
+    }
+    h1::before {
+      content: 'cy';
+    }
+    h1:hover {
+      color: var(--no-default, green);
+    }
+  </style>
+</head>
+<body>
+  <!-- 伪元素：是一个附加至选择器末关键字 允许你对被选择元素的特定部分修改样式 (::开头) -->
+  <!-- 伪类: 是添加到选择器的关键字 指定要选择的元素的特殊状态 (:开头) -->
+  <!-- :root 这个CSS 伪类匹配文档树的根元素 对于HTML来说 :root表示<html>元素 除了优先级别更高之外 与html选择器相同 -->
+  <!-- <div>cy</div> -->
+  <h1>我是一级标题</h1>
+  <p>这是一个段落文本 在文本中有一个<span>span element</span>并且还有一个<a href="http://www.baidu.com">链接</a></p>
+  <p>这是第二段 包含了一个<em>强调</em>元素</p>
+  <!-- <ul>
+    <li></li>
+    <li></li>
+    <li></li>
+  </ul> -->
+</body>
+</html>
